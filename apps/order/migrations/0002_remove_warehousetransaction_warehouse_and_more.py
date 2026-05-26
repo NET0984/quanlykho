@@ -73,11 +73,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name='customerdebt',
-            name='id',
-            field=models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False),
-        ),
-        migrations.AlterField(
-            model_name='customerdebt',
             name='sales_order',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='debts', to='order.salesorder'),
         ),
@@ -95,11 +90,6 @@ class Migration(migrations.Migration):
             model_name='salesorder',
             name='customer_name',
             field=models.CharField(max_length=200),
-        ),
-        migrations.AlterField(
-            model_name='salesorder',
-            name='id',
-            field=models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False),
         ),
         migrations.AlterField(
             model_name='salesorder',
