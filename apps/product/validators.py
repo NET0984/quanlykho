@@ -184,8 +184,11 @@ def validate_product_name_unique(value, exclude_id=None):
         raise ValidationError("Tên sản phẩm đã tồn tại")
     return value
 
-def validate_category_name_unique(value):
-    if Category.objects.filter(name__iexact=value.strip()).exists():
+def validate_category_name_unique(value, exclude_id=None):
+    qs = Category.objects.filter(name__iexact=value.strip())
+    if exclude_id:
+        qs = qs.exclude(id=exclude_id)
+    if qs.exists():
         raise ValidationError("Tên danh mục đã tồn tại")
 
 def validate_file_image(file):
