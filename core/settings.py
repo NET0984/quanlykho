@@ -5,6 +5,7 @@ Django settings cho dự án Quản Lý Kho Vật Liệu
 
 import os
 from dotenv import load_dotenv
+import dj_database_url
 load_dotenv()
 from pathlib import Path
 from datetime import timedelta
@@ -15,9 +16,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # BẢO MẬT - Đọc từ .env, KHÔNG hardcode vào đây!
 # ============================================================
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-fallback-key')
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False').lower() in {'1', 'true', 'yes'}
 
-ALLOWED_HOSTS = ['*']  # Giới hạn lại khi deploy production
+_allowed_hosts = os.environ.get('ALLOWED_HOSTS', '')
+ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts.split(',') if host.strip()] or [
+    'localhost',
+    '127.0.0.1',
+    '.onrender.com',
+]
 
 # ============================================================
 # APPS - Thêm corsheaders và rest_framework
@@ -55,6 +61,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
 
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -97,6 +104,14 @@ DATABASES = {
         },
     }
 }
+
+_database_url = os.environ.get('DATABASE_URL', '')
+if _database_url:
+    DATABASES['default'] = dj_database_url.config(
+        default=_database_url,
+        conn_max_age=600,
+        ssl_require=os.environ.get('DATABASE_SSL', 'True').lower() in {'1', 'true', 'yes'},
+    )
 
 # User model tùy chỉnh
 AUTH_USER_MODEL = 'authentication.User'
@@ -149,6 +164,13 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+]
+
+_csrf_trusted_origins = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in _csrf_trusted_origins.split(',')
+    if origin.strip()
 ]
 
 # ============================================================
@@ -223,6 +245,8 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
