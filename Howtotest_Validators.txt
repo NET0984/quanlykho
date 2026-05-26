@@ -1,0 +1,399 @@
+📖 HƯỚNG DẪN CHẠY UNIT TEST - VALIDATION MODULE
+Dự án: TeLiet_Quanlykho - Quản Lý Kho Vật Liệu
+Tài liệu này hướng dẫn cách chạy các validator tests - bao gồm 39 test cases kiểm tra tính hợp lệ của dữ liệu
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📍 BƯỚC 1: CHUẨN BỊ MÔI TRƯỜNG
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1️⃣  Mở Terminal (PowerShell hoặc CMD) tại thư mục gốc dự án:
+
+   PowerShell
+   PS D:\QLDH\TeLiet_Quanlykho>
+
+2️⃣  Tạo và kích hoạt môi trường ảo (nếu chưa có):
+
+   📌 Tạo venv mới:
+   PowerShell
+   python -m venv venv
+
+   📌 Kích hoạt venv (PowerShell):
+   PowerShell
+   .\venv\Scripts\Activate.ps1
+
+   ✅ Thành công khi thấy (venv) ở đầu dòng lệnh
+   
+   ⚠️  Nếu bị lỗi "từ chối quyền chạy script":
+   PowerShell
+   Set-ExecutionPolicy Unrestricted -Scope CurrentUser
+
+3️⃣  Cài đặt các thư viện cần thiết:
+
+   PowerShell
+   pip install -r requirements.txt
+
+   📚 File requirements.txt chứa:
+      - Django >= 4.0
+      - mysqlclient >= 2.0
+      - djangorestframework >= 3.14.0
+      - djangorestframework-simplejwt >= 5.3.0
+      - django-cors-headers >= 4.3.0
+      - python-dotenv >= 1.0.0
+      - Pillow >= 10.0  (✨ Dùng để xử lý ảnh)
+      - pytest / pytest-django (nếu cần)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🧪 BƯỚC 2: CHẠY VALIDATOR TESTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✨ CỐT LÕI - 39 TEST CASES CHO VALIDATORS
+
+Để chạy tất cả 39 validator tests:
+
+   PowerShell
+   python manage.py test apps.product.test_validators --settings=core.settings_test --keepdb
+
+📊 Kết quả mong đợi:
+
+   Found 39 test(s).
+   ...
+   Ran 39 tests in 0.075s
+   
+   OK
+   ✅ All 39 tests passed!
+
+───────────────────────────────────────────────────────────────────────────────
+
+🔍 CHẠY TESTS VỚI CHI TIẾT ĐẦY ĐỦ (Verbose Mode)
+
+Để thấy tên chi tiết từng test:
+
+   PowerShell
+   python manage.py test apps.product.test_validators -v 2 --settings=core.settings_test --keepdb
+
+📝 Output sẽ hiển thị:
+
+   test_validate_product_name_empty (apps.product.test_validators.TestProductValidator) ... ok
+   test_validate_product_name_too_short (apps.product.test_validators.TestProductValidator) ... ok
+   test_validate_product_name_too_long (apps.product.test_validators.TestProductValidator) ... ok
+   ...
+   Ran 39 tests in 0.075s
+   OK
+
+───────────────────────────────────────────────────────────────────────────────
+
+📋 CHẠY TESTS RIÊNG LẺ (By Class)
+
+Nếu chỉ muốn test từng lớp validator:
+
+   1️⃣  Test ProductValidator (10 tests):
+   PowerShell
+   python manage.py test apps.product.test_validators.TestProductValidator --settings=core.settings_test --keepdb
+
+   2️⃣  Test CategoryValidator (4 tests):
+   PowerShell
+   python manage.py test apps.product.test_validators.TestCategoryValidator --settings=core.settings_test --keepdb
+
+   3️⃣  Test ProductUnitValidator (6 tests):
+   PowerShell
+   python manage.py test apps.product.test_validators.TestProductUnitValidator --settings=core.settings_test --keepdb
+
+   4️⃣  Test ValidateProductNameUnique (4 tests):
+   PowerShell
+   python manage.py test apps.product.test_validators.TestValidateProductNameUnique --settings=core.settings_test --keepdb
+
+   5️⃣  Test ValidateCategoryNameUnique (3 tests):
+   PowerShell
+   python manage.py test apps.product.test_validators.TestValidateCategoryNameUnique --settings=core.settings_test --keepdb
+
+   6️⃣  Test ValidateFileImage (10 tests) - ✨ File Upload Validation:
+   PowerShell
+   python manage.py test apps.product.test_validators.TestValidateFileImage --settings=core.settings_test --keepdb
+
+───────────────────────────────────────────────────────────────────────────────
+
+📌 GIẢI THÍCH TỰ CHỌN (FLAGS)
+
+   --settings=core.settings_test
+      → Dùng cấu hình test database (SQLite thay vì MySQL)
+      → Nhanh hơn, không cần kết nối mạng
+      → An toàn: dùng database ảo, không làm hỏng data thật
+
+   --keepdb
+      → Giữ lại test database sau khi chạy xong
+      → Lần test kế tiếp sẽ chạy nhanh hơn (không tạo lại DB)
+      → Xóa DB cũ bằng lệnh: rm test_db.sqlite3
+
+   -v 2 (Verbose level 2)
+      → Hiển thị tên chi tiết từng test
+      → Nếu test fail, sẽ thấy chính xác test nào sai
+      → Mức độ: 0 (im lặng), 1 (bình thường), 2 (chi tiết), 3 (rất chi tiết)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ DANH SÁCH 39 TEST CASES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🏷️  PRODUCTVALIDATOR (10 tests)
+┌─ Validator cho sản phẩm
+├─ ✅ test_validate_product_name_valid
+├─ ✅ test_validate_product_name_empty → Báo lỗi "không được để trống"
+├─ ✅ test_validate_product_name_too_short → Báo lỗi "ít nhất 3 ký tự"
+├─ ✅ test_validate_product_name_too_long → Báo lỗi "vượt quá 255 ký tự"
+├─ ✅ test_validate_product_name_special_chars → Báo lỗi ký tự <, >
+├─ ✅ test_validate_base_price_valid
+├─ ✅ test_validate_base_price_zero → Báo lỗi "> 0"
+├─ ✅ test_validate_base_price_negative → Báo lỗi "không được âm"
+├─ ✅ test_validate_base_price_invalid_type → Báo lỗi "phải là số"
+├─ ✅ test_validate_base_unit_empty
+├─ ✅ test_validate_base_unit_too_long → Báo lỗi "vượt quá 50 ký tự"
+└─ ✅ test_validate_base_unit_valid
+
+🏷️  CATEGORYVALIDATOR (4 tests)
+┌─ Validator cho danh mục
+├─ ✅ test_validate_category_name_valid
+├─ ✅ test_validate_category_name_empty → Báo lỗi "không được để trống"
+├─ ✅ test_validate_category_name_too_short → Báo lỗi "ít nhất 2 ký tự"
+└─ ✅ test_validate_category_name_special_chars → Báo lỗi ký tự <, >
+
+🏷️  PRODUCTUNITVALIDATOR (6 tests)
+┌─ Validator cho đơn vị sản phẩm
+├─ ✅ test_validate_unit_name_valid
+├─ ✅ test_validate_unit_name_empty → Báo lỗi "không được để trống"
+├─ ✅ test_validate_conversion_rate_valid
+├─ ✅ test_validate_conversion_rate_zero → Báo lỗi "> 0"
+├─ ✅ test_validate_conversion_rate_negative → Báo lỗi "> 0"
+└─ ✅ test_validate_conversion_rate_invalid_type → Báo lỗi "phải là số"
+
+🏷️  VALIDATEPRODUCTNAMEUUNIQUE (4 tests)
+┌─ Validator kiểm tra tên sản phẩm không trùng lặp
+├─ ✅ test_unique_name_valid → Tên mới
+├─ ✅ test_unique_name_duplicate → Báo lỗi "đã tồn tại"
+├─ ✅ test_unique_name_case_insensitive → Không phân biệt hoa/thường
+└─ ✅ test_unique_name_exclude_self → Cho phép khi chỉnh sửa chính nó
+
+🏷️  VALIDATECATEGORYNAMEUNIQUE (3 tests)
+┌─ Validator kiểm tra tên danh mục không trùng lặp
+├─ ✅ test_unique_name_valid → Tên mới
+├─ ✅ test_unique_name_duplicate → Báo lỗi "đã tồn tại"
+└─ ✅ test_unique_name_case_insensitive → Không phân biệt hoa/thường
+
+🏷️  VALIDATEFILEIMAGE (10 tests) ⭐ NEW - FILE UPLOAD VALIDATION
+┌─ Validator cho file ảnh upload
+├─ ✅ test_valid_jpg_file → JPG ≤ 2MB → OK
+├─ ✅ test_valid_png_file → PNG ≤ 2MB → OK
+├─ ✅ test_valid_jpeg_file → JPEG ≤ 2MB → OK
+├─ ✅ test_file_exceeds_2mb → File > 2MB → Báo lỗi "vượt quá 2MB"
+├─ ✅ test_file_exactly_2mb → File = 2MB → OK (boundary)
+├─ ✅ test_invalid_image_type_gif → GIF → Báo lỗi "Chỉ chấp nhận JPG, JPEG, PNG"
+├─ ✅ test_invalid_image_type_pdf → PDF → Báo lỗi
+├─ ✅ test_invalid_image_type_text → TXT → Báo lỗi
+├─ ✅ test_none_file → Không upload → OK (không bắt buộc)
+└─ ✅ test_small_file_all_types → Tệp < 1KB → OK
+
+═══════════════════════════════════════════════════════════════════════════════
+
+⚙️  BƯỚC 3: CHẠY TESTS SERVICE (TÙY CHỌN)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Nếu muốn test thêm các service layer (logic nghiệp vụ):
+
+   PowerShell
+   python manage.py test apps.product.test_services --settings=core.settings_test --keepdb
+
+   PowerShell
+   python manage.py test apps.authentication.test_services --settings=core.settings_test --keepdb
+
+   PowerShell
+   python manage.py test apps.product.test_services apps.authentication.test_services --settings=core.settings_test --keepdb
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔧 BƯỚC 4: XỬ LÝ SỰ CỐ THƯỜNG GẶP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+❌ LỖI 1: "ModuleNotFoundError: No module named 'PIL'"
+
+   🔧 Giải pháp:
+   PowerShell
+   pip install Pillow
+
+❌ LỖI 2: "Unknown server host 'db' (11001)"
+
+   💡 Nguyên nhân: Django cố kết nối MySQL nhưng DB không chạy
+   
+   🔧 Giải pháp:
+   → Dùng --settings=core.settings_test để dùng SQLite thay vì MySQL
+   
+   PowerShell
+   python manage.py test apps.product.test_validators --settings=core.settings_test --keepdb
+
+❌ LỖI 3: "Type 'yes' if you would like to try deleting the test database..."
+
+   💡 Nguyên nhân: Test database cũ vẫn tồn tại, Django hỏi có xóa hay không
+   
+   🔧 Giải pháp:
+   → Gõ "yes" và ấn Enter (100% an toàn, chỉ xóa DB ảo)
+   → Hoặc dùng --keepdb để giữ DB lại cho lần test kế tiếp
+
+❌ LỖI 4: "OperationalError: (1040, 'Too many connections')"
+
+   💡 Nguyên nhân: Quá nhiều test chạy cùng lúc, MySQL hết kết nối
+   
+   🔧 Giải pháp:
+   → Dùng --settings=core.settings_test (SQLite không có giới hạn kết nối)
+   → Hoặc tăng max_connections trong MySQL config
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📊 BƯỚC 5: ĐỌC VÀ HIỂU KẾT QUẢ TEST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Khi test chạy thành công:
+
+   ✅ Expected Output:
+   
+   Found 39 test(s).
+   Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+   Operations to perform:
+     Synchronize unmigrated apps: corsheaders, messages, rest_framework, ...
+     Apply all migrations: admin, auth, authentication, contenttypes, product, ...
+   
+   [Các migration được apply...]
+   
+   System check identified no issues (0 silenced).
+   test_validate_category_name_empty ... ok
+   test_validate_category_name_special_chars ... ok
+   test_validate_category_name_too_short ... ok
+   test_validate_category_name_valid ... ok
+   test_validate_conversion_rate_invalid_type ... ok
+   [39 lines của từng test...]
+   
+   Ran 39 tests in 0.075s
+   
+   OK
+   Preserving test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+
+🟢 **OK** = Tất cả tests đều pass ✅
+🔴 **FAILED** = Có test fail, xem chi tiết ở trên ⚠️
+
+───────────────────────────────────────────────────────────────────────────────
+
+📈 Nếu test FAIL:
+
+   Sẽ thấy thông tin như:
+
+   FAIL: test_tên_test (path.to.test.TestClassName.test_name)
+   Test mô tả ngắn gọn
+   ------
+   Traceback (most recent call last):
+     File "...", line X, in test_name
+       self.assertEquals(expected, actual)
+   AssertionError: 'expected_value' != 'actual_value'
+
+   📌 Giải pháp:
+   → Xem chi tiết lỗi
+   → Kiểm tra test code trong apps/product/test_validators.py
+   → Kiểm tra validator code trong apps/product/validators.py
+   → Chỉnh sửa và chạy test lại
+
+═══════════════════════════════════════════════════════════════════════════════
+
+💡 TỐI ƯU HÓA THỜI GIAN CHẠY TEST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Lần đầu tiên: ~15-30 giây (tạo DB, migration)
+Lần sau (với --keepdb): ~0.1 giây (dùng DB cũ)
+
+   PowerShell
+   # Lần 1: Chậm
+   python manage.py test apps.product.test_validators --settings=core.settings_test
+   
+   # Lần 2 trở đi: Nhanh như tia
+   python manage.py test apps.product.test_validators --settings=core.settings_test --keepdb
+   
+   # Nếu muốn reset DB:
+   rm test_db.sqlite3  (trên Linux/Mac: rm test_db.sqlite3)
+   # hoặc không dùng --keepdb
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎓 BỔ SUNG: CẤU TRÚC TEST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Các test được tổ chức như sau:
+
+   apps/product/
+   ├── test_validators.py  ✅ 39 tests cho Validators
+   ├── test_services.py    ✅ 20 tests cho Services
+   ├── validators.py       🔧 Mã validator (được test)
+   ├── services.py         🔧 Mã service (được test)
+   └── models.py           🔧 Database models
+
+Mối quan hệ:
+
+   test_validators.py → test lớp Validator
+           ↓
+       validators.py → chứa logic validation
+   
+   test_services.py → test lớp Service
+           ↓
+       services.py → chứa logic nghiệp vụ
+   
+   Cả 2 đều sử dụng:
+           ↓
+       models.py → Product, Category, ProductUnit
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📝 GHI CHÚ QUAN TRỌNG
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Settings Test (SQLite):
+   ✅ --settings=core.settings_test
+   → settings_test.py dùng SQLite thay vì MySQL
+   → Nhanh, không cần kết nối mạng
+   → Thích hợp cho Unit Test
+
+2. Main Settings (MySQL):
+   ❌ Không dùng khi chạy test
+   → settings.py dùng MySQL
+   → Cần MySQL chạy (local)
+   → Chậm hơn vì phải kết nối mạng
+
+3. Test Database:
+   ✅ SQLite in-memory: "file:memorydb_default?mode=memory&cache=shared"
+   → Nằm trong RAM, không lưu file
+   → Siêu nhanh
+   → Tự xóa khi Django đóng
+
+4. --keepdb flag:
+   ✅ Giữ lại DB sau khi kết thúc test
+   → Test tiếp theo không cần tạo lại
+   → Tăng tốc độ đáng kể
+   → Mutation schema không ảnh hưởng (SQLite in-memory)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📞 HỖTRỢ & LIÊN HỆ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Nếu gặp vấn đề:
+
+1. Xem lại file này (Howtotest_Validators.txt)
+2. Kiểm tra file lỗi (test_validators.py, validators.py)
+3. Chạy test với -v 3 để chi tiết hơn:
+
+   PowerShell
+   python manage.py test apps.product.test_validators -v 3 --settings=core.settings_test --keepdb
+
+4. Xem Django documentation: https://docs.djangoproject.com/en/stable/topics/testing/
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✨ CHÚC MỪN CÓ NHỮNG TEST XANH ✅ ✨
+
+Thời gian cập nhật: April 9, 2026
+Phiên bản: 1.0

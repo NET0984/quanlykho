@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Chi tiết phiếu xuất - TeLiet System{% endblock %}
+{% block breadcrumb %}<a href="{% url 'warehouse:export_list' %}">Xuất kho</a> / {{ receipt.receipt_code }}{% endblock %}
+{% block nav_export %}active{% endblock %}
+
+{% block extra_css %}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;}
+.info-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.info-value{font-size:14px;color:var(--text);}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600;}
+.status-badge.PREPARING{background:rgba(59,130,246,.12);color:var(--info);}
+.status-badge.PENDING{background:rgba(245,158,11,.12);color:var(--warning);}
+.status-badge.APPROVED{background:rgba(34,197,94,.12);color:var(--success);}
+.status-badge.REJECTED{background:rgba(239,68,68,.12);color:var(--danger);}
+.pickup-box{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18);border-radius:12px;padding:18px 20px;margin-bottom:20px;}
+.field{margin-bottom:16px;}
+.field-label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;}
+.field input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div><h1 class="page-title">{{ receipt.receipt_code }}</h1></div>
+  <div><a href="{% url 'warehouse:export_list' %}" class="btn btn-ghost">Quay lại</a></div>
+</div>
+
+<div class="info-grid">
+  <div><div class="info-label">Trạng thái</div><div class="info-value"><span class="status-badge {{ receipt.status }}">{{ receipt.get_status_display }}</span></div></div>
+  <div><div class="info-label">Đơn hàng</div><div class="info-value">{{ receipt.sales_order.order_code|default:"-" }}</div></div>
+  <div><div class="info-label">Người tạo</div><div class="info-value">{{ receipt.created_by.full_name|default:receipt.created_by.username }}</div></div>
+  <div><div class="info-label">Ngày tạo</div><div class="info-value">{{ receipt.created_at|date:"d/m/Y H:i" }}</div></div>
+  {% if receipt.picked_by %}<div><div class="info-label">Người lấy hàng</div><div class="info-value">{{ receipt.picked_by.full_name|default:receipt.picked_by.username }} - {{ receipt.picked_at|date:"d/m/Y H:i" }}</div></div>{% endif %}
+  {% if receipt.reviewed_by %}<div><div class="info-label">Người duyệt</div><div class="info-value">{{ receipt.reviewed_by.full_name|default:receipt.reviewed_by.username }} - {{ receipt.reviewed_at|date:"d/m/Y H:i" }}</div></div>{% endif %}
+</div>
+
+{% if user_role == 'KHO' or user_role == 'ADMIN' %}
+  {% if receipt.status == 'PREPARING' %}
+  <div class="pickup-box">
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;">Tải ảnh và xác nhận đã lấy hàng</div>
+    <div style="font-size:13px;color:var(--muted2);margin-bottom:14px;">Sau khi xác nhận, phiếu sẽ chuyển sang chờ duyệt và tồn kho sẽ bị trừ ngay.</div>
+    <form method="POST" action="{% url 'warehouse:export_mark_picked' receipt.id %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="field">
+        <label class="field-label">Ảnh chụp hàng đã lấy</label>
+        <input type="file" name="pickup_photo" accept="image/*">
+      </div>
+      <button type="submit" class="btn btn-primary">Đã lấy hàng</button>
+    </form>
+  </div>
+  {% endif %}
+{% endif %}
+
+{% if receipt.note %}
+<div class="card" style="margin-bottom:20px;"><div style="padding:16px 20px;">{{ receipt.note }}</div></div>
+{% endif %}
+
+{% if receipt.pickup_photo %}
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header"><span class="card-title">Ảnh chụp lấy hàng</span></div>
+  <div style="padding:16px 20px;">
+    <img src="{{ receipt.pickup_photo.url }}" alt="Ảnh lấy hàng" style="max-width:420px;width:100%;border-radius:10px;border:1px solid var(--border);">
+  </div>
+</div>
+{% endif %}
+
+{% if receipt.status == 'REJECTED' and receipt.rejection_note %}
+<div class="card" style="margin-bottom:20px;"><div style="padding:16px 20px;color:#fca5a5;">{{ receipt.rejection_note }}</div></div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header"><span class="card-title">Danh sách sản phẩm</span></div>
+  <table>
+    <thead>
+      <tr><th>Sản phẩm</th><th>Số lượng</th><th>Đơn vị</th><th>Đơn giá</th><th>Thành tiền</th><th>Ghi chú</th></tr>
+    </thead>
+    <tbody>
+      {% for item in receipt.items.all %}
+      <tr>
+        <td>{{ item.product.name }}</td>
+        <td>{{ item.quantity|floatformat:2 }}</td>
+        <td>{{ item.product.base_unit }}</td>
+        <td>{{ item.unit_price|floatformat:0 }}đ</td>
+        <td>{{ item.subtotal|floatformat:0 }}đ</td>
+        <td>{{ item.note|default:"-" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">Không có sản phẩm</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

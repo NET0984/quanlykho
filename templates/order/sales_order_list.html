@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+
+{% block title %}Đơn hàng - TeLiet System{% endblock %}
+{% block breadcrumb %}Đơn hàng{% endblock %}
+{% block nav_orders %}active{% endblock %}
+
+{% block extra_css %}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600;}
+.status-badge.CONFIRMED{background:rgba(59,130,246,.12);color:var(--info);}
+.status-badge.WAITING{background:rgba(245,158,11,.12);color:var(--warning);}
+.status-badge.PICKED{background:rgba(16,185,129,.12);color:#10b981;}
+.status-badge.DONE{background:rgba(34,197,94,.12);color:var(--success);}
+.status-badge.CANCELLED{background:rgba(239,68,68,.12);color:var(--danger);}
+.filter-tabs{display:flex;gap:8px;flex-wrap:wrap;}
+.filter-tab{padding:6px 16px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted2);text-decoration:none;transition:all .15s;}
+.filter-tab:hover,.filter-tab.active{background:rgba(232,164,39,.12);border-color:rgba(232,164,39,.3);color:var(--accent);}
+.search-form{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.search-form input{padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);outline:none;transition:border-color .15s;}
+.search-form input[type="text"]{width:280px;}
+.search-form input[type="date"]{width:165px;}
+.search-form input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,164,39,.08);}
+.search-form button{padding:8px 14px;background:var(--accent);color:#0e0f11;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:5px;}
+.search-form button:hover{filter:brightness(1.1);}
+.search-form button.secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.search-form button.secondary:hover{background:var(--surface3);filter:none;}
+.search-form button[disabled]{opacity:.45;cursor:not-allowed;pointer-events:none;}
+.filter-search-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;}
+.filter-error{width:100%;font-size:12px;color:var(--danger);font-weight:600;}
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+.stat-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.stat-value{font-size:28px;font-weight:700;color:var(--accent);}
+.status-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.status-btn{padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600;border:1px solid;cursor:pointer;background:none;}
+.status-btn.waiting{color:var(--warning);border-color:rgba(245,158,11,.3);}
+.status-btn.cancel{color:var(--danger);border-color:rgba(239,68,68,.3);}
+.flow-hint{font-size:11px;color:var(--muted);}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-backdrop.open{opacity:1;pointer-events:auto;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:760px;padding:28px;max-height:90vh;overflow-y:auto;}
+.modal-sm{max-width:480px;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.modal-title{font-size:18px;font-weight:700;color:var(--text);}
+.modal-close{width:30px;height:30px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;color:var(--muted2);}
+.field{margin-bottom:16px;}
+.field-label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;}
+.field input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.items-table{width:100%;border-collapse:collapse;margin-bottom:12px;}
+.items-table th,.items-table td{padding:8px 10px;border-bottom:1px solid var(--border);}
+.items-table th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:var(--surface2);text-align:left;}
+.items-table td input,.items-table td select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);width:100%;}
+.price-display{background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--accent);font-weight:600;min-height:35px;display:flex;align-items:center;}
+.price-display.empty{color:var(--muted);font-weight:400;}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+.toast-container{position:fixed;bottom:28px;right:28px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;transform:translateX(80px);opacity:0;transition:all .3s;min-width:260px;}
+.toast.show{transform:translateX(0);opacity:1;}
+.toast.success{border-left:3px solid var(--success);}
+.toast.warning{border-left:3px solid var(--warning);}
+.toast.error,.toast.danger{border-left:3px solid var(--danger);}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Đơn hàng bán</h1>
+    <p class="page-sub">Thêm trạng thái đã lấy hàng và trừ tồn ngay khi kho xác nhận lấy hàng.</p>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    {% if user_role == 'KE_TOAN' or user_role == 'ADMIN' %}
+    <a href="{% url 'order:sales_report' %}" class="btn btn-ghost">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 4-5"/></svg>
+      Báo cáo
+    </a>
+    {% endif %}
+    {% if user_role == 'SALE' or user_role == 'ADMIN' %}
+    <button class="btn btn-primary" onclick="openCreateOrder()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Tạo đơn hàng
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-card"><div class="stat-label">Tổng đơn</div><div class="stat-value">{{ stats.total_orders|floatformat:0 }}</div></div>
+  <div class="stat-card"><div class="stat-label">Chờ lấy hàng</div><div class="stat-value">{{ stats.pending_orders|floatformat:0 }}</div></div>
+  <div class="stat-card"><div class="stat-label">Đã lấy hàng</div><div class="stat-value">{{ stats.picked_orders|floatformat:0 }}</div></div>
+  <div class="stat-card"><div class="stat-label">Tổng số SP</div><div class="stat-value">{{ stats.total_items|floatformat:0 }}</div></div>
+</div>
+
+<!-- Filter + Search -->
+<div class="filter-search-row">
+  <div class="filter-tabs">
+    <a href="?status={% if search_query %}&search={{ search_query }}{% endif %}&from_date={{ from_date }}&to_date={{ to_date }}" class="filter-tab {% if not status_filter %}active{% endif %}">Tất cả</a>
+    <a href="?status=CONFIRMED{% if search_query %}&search={{ search_query }}{% endif %}&from_date={{ from_date }}&to_date={{ to_date }}" class="filter-tab {% if status_filter == 'CONFIRMED' %}active{% endif %}">✅ Đã xác nhận</a>
+    <a href="?status=WAITING{% if search_query %}&search={{ search_query }}{% endif %}&from_date={{ from_date }}&to_date={{ to_date }}" class="filter-tab {% if status_filter == 'WAITING' %}active{% endif %}">⏳ Chờ lấy hàng</a>
+     <a href="?status=PICKED{% if search_query %}&search={{ search_query }}{% endif %}&from_date={{ from_date }}&to_date={{ to_date }}" class="filter-tab {% if status_filter == 'PICKED' %}active{% endif %}">📦 Đã lấy hàng</a>
+    <a href="?status=DONE{% if search_query %}&search={{ search_query }}{% endif %}&from_date={{ from_date }}&to_date={{ to_date }}" class="filter-tab {% if status_filter == 'DONE' %}active{% endif %}">🎉 Hoàn thành</a>
+    <a href="?status=CANCELLED{% if search_query %}&search={{ search_query }}{% endif %}&from_date={{ from_date }}&to_date={{ to_date }}" class="filter-tab {% if status_filter == 'CANCELLED' %}active{% endif %}">❌ Đã hủy</a>
+  </div>
+  <form method="get" class="search-form" id="order-report-filter-form">
+    {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+    <input id="fromDateInput" type="date" name="from_date" value="{{ from_date }}" required>
+    <input id="toDateInput" type="date" name="to_date" value="{{ to_date }}" required>
+    <input type="text" name="search" placeholder="Tìm mã đơn hoặc khách hàng..." value="{{ search_query }}">
+    <button id="viewReportBtn" type="submit">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Tìm
+    </button>
+    <button
+      id="exportExcelBtn"
+      type="submit"
+      class="secondary"
+      formaction="{% url 'reports:sales_export_excel' %}"
+      formmethod="get"
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Xuất Excel
+    </button>
+    <button
+      id="exportPdfBtn"
+      type="submit"
+      class="secondary"
+      formaction="{% url 'reports:sales_export_pdf' %}"
+      formmethod="get"
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+      Xuất PDF
+    </button>
+  </form>
+  <div id="orderDateRangeError" class="filter-error" hidden>
+    Ngày bắt đầu không được lớn hơn ngày kết thúc.
+  </div>
+</div>
+
+<form method="get" class="search-form">
+  {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+  <input type="text" name="search" placeholder="Tìm mã đơn hoặc khách hàng..." value="{{ search_query }}">
+  <button type="submit">Tìm</button>
+</form>
+
+<form id="status-update-form" method="POST" action="{% url 'order:sales_list' %}" style="display:none;">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="update_status">
+  <input type="hidden" name="order_id" id="status-order-id">
+  <input type="hidden" name="status" id="status-value">
+</form>
+
+<div class="modal-backdrop" id="modal-confirm-status">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span class="modal-title">Xác nhận cập nhật</span>
+      <button type="button" class="modal-close" onclick="closeModal('modal-confirm-status')">×</button>
+    </div>
+    <p id="confirm-message" style="font-size:14px;color:var(--text);line-height:1.6;"></p>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modal-confirm-status')">Hủy</button>
+      <button type="button" class="btn btn-primary" onclick="submitStatusUpdate()">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Mã đơn</th>
+        <th>Khách hàng</th>
+        <th>Số lượng SP</th>
+        <th>Ngày tạo</th>
+        <th>Trạng thái</th>
+        {% if user_role != 'SALE' %}<th>Cập nhật</th>{% endif %}
+        <th style="text-align:right">Chi tiết</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for order in orders %}
+      <tr>
+        <td class="bold">{{ order.order_code }}</td>
+        <td>{{ order.customer_name }}</td>
+        <td>{{ order.items.count }} SP</td>
+        <td>{{ order.created_at|date:"d/m/Y H:i" }}</td>
+        <td><span class="status-badge {{ order.status }}">{{ order.get_status_display }}</span></td>
+        {% if user_role != 'SALE' %}
+        <td>
+          {% if order.status == 'CONFIRMED' %}
+          <div class="status-actions">
+            <button type="button" class="status-btn waiting" onclick="updateStatus('{{ order.pk }}', 'WAITING', '{{ order.order_code }}')">Chờ lấy hàng</button>
+            <button type="button" class="status-btn cancel" onclick="updateStatus('{{ order.pk }}', 'CANCELLED', '{{ order.order_code }}')">Hủy</button>
+          </div>
+          {% elif order.status == 'WAITING' %}
+          <span class="flow-hint">Đang chờ kho lấy hàng và chụp ảnh</span>
+          {% elif order.status == 'PICKED' %}
+          <span class="flow-hint">Đang chờ kế toán duyệt</span>
+          {% else %}
+          <span class="flow-hint">-</span>
+          {% endif %}
+        </td>
+        {% endif %}
+        <td style="text-align:right">
+          <a href="{% url 'order:sales_detail' order.pk %}" class="action-btn" title="Xem chi tiết" aria-label="Xem chi tiết đơn {{ order.order_code }}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">Chưa có đơn hàng nào.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if paginator.num_pages > 1 %}
+  <div class="pagination-wrap">
+    <span style="font-size:12px;color:var(--muted);">
+      Trang {{ page_obj.number }}/{{ paginator.num_pages }} — {{ paginator.count }} đơn hàng
+    </span>
+    <div class="pagination">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}&from_date={{ from_date }}&to_date={{ to_date }}" class="pg-btn">‹</a>
+      {% else %}
+      <span class="pg-btn disabled">‹</span>
+      {% endif %}
+
+      {% for num in paginator.page_range %}
+        {% if num == page_obj.number %}
+          <span class="pg-btn active">{{ num }}</span>
+        {% elif num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+          <a href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}&from_date={{ from_date }}&to_date={{ to_date }}" class="pg-btn">{{ num }}</a>
+        {% elif num == page_obj.number|add:"-3" or num == page_obj.number|add:"3" %}
+          <span class="pg-btn disabled" style="border:none;background:none;">…</span>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}&from_date={{ from_date }}&to_date={{ to_date }}" class="pg-btn">›</a>
+      {% else %}
+      <span class="pg-btn disabled">›</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<div style="margin-top:12px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);">
+  <strong style="color:var(--text);">Luồng mới:</strong>
+  Đã xác nhận -> Chờ lấy hàng -> Đã lấy hàng -> Hoàn thành.
+  Tồn kho bị trừ ở bước thủ kho bấm "Đã lấy hàng".
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<div class="toast-container" id="toast-container">
+  {% if messages %}{% for message in messages %}
+  <div class="toast show {{ message.tags }}"><span>{{ message }}</span></div>
+  {% endfor %}{% endif %}
+</div>
+
+<div class="modal-backdrop" id="modal-create">
+  <form class="modal" method="POST" action="{% url 'order:sales_list' %}">
+    {% csrf_token %}
+    <div class="modal-header">
+      <span class="modal-title">Tạo đơn hàng mới</span>
+      <button type="button" class="modal-close" onclick="closeModal('modal-create')">×</button>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label class="field-label">Tên khách hàng</label>
+        <input type="text" name="customer_name" required>
+      </div>
+      <div class="field">
+        <label class="field-label">Số điện thoại</label>
+        <input type="text" name="customer_phone">
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">Ghi chú</label>
+      <input type="text" name="note">
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span class="field-label" style="margin:0;">Danh sách sản phẩm</span>
+      <button type="button" class="btn btn-ghost" onclick="addOrderRow()">Thêm dòng</button>
+    </div>
+    <table class="items-table">
+      <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Đơn vị</th><th>Đơn giá</th><th>Tồn kho</th></tr></thead>
+      <tbody id="order-items-body"></tbody>
+    </table>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modal-create')">Hủy</button>
+      <button type="submit" class="btn btn-primary">Xác nhận đơn hàng</button>
+    </div>
+  </form>
+</div>
+
+<script>
+const orderFilterForm = document.getElementById('order-report-filter-form');
+const fromDateInput = document.getElementById('fromDateInput');
+const toDateInput = document.getElementById('toDateInput');
+const viewReportBtn = document.getElementById('viewReportBtn');
+const exportExcelBtn = document.getElementById('exportExcelBtn');
+const exportPdfBtn = document.getElementById('exportPdfBtn');
+const orderDateRangeError = document.getElementById('orderDateRangeError');
+
+function hasInvalidDateRange() {
+  if (!fromDateInput || !toDateInput || !fromDateInput.value || !toDateInput.value) {
+    return false;
+  }
+  return fromDateInput.value > toDateInput.value;
+}
+
+function updateDateRangeState() {
+  const invalid = hasInvalidDateRange();
+  if (viewReportBtn) viewReportBtn.disabled = invalid;
+  if (exportExcelBtn) exportExcelBtn.disabled = invalid;
+  if (exportPdfBtn) exportPdfBtn.disabled = invalid;
+  if (orderDateRangeError) orderDateRangeError.hidden = !invalid;
+  return !invalid;
+}
+
+updateDateRangeState();
+if (fromDateInput) fromDateInput.addEventListener('change', updateDateRangeState);
+if (toDateInput) toDateInput.addEventListener('change', updateDateRangeState);
+if (orderFilterForm) {
+  orderFilterForm.addEventListener('submit', function (event) {
+    if (!updateDateRangeState()) {
+      event.preventDefault();
+    }
+  });
+}
+
+const PRODUCTS = {{ products_json|safe }};
+const STOCKS = {{ stocks_json|safe }};
+let orderCount = 0;
+
+function updateStatus(orderId, status, orderCode) {
+  document.getElementById('status-order-id').value = orderId;
+  document.getElementById('status-value').value = status;
+  const message = status === 'WAITING'
+    ? `Chuyển đơn <strong>${orderCode}</strong> sang chờ lấy hàng? Hệ thống sẽ tạo phiếu xuất cho kho.`
+    : `Cập nhật trạng thái đơn <strong>${orderCode}</strong>?`;
+  document.getElementById('confirm-message').innerHTML = message;
+  document.getElementById('modal-confirm-status').classList.add('open');
+}
+
+function submitStatusUpdate() { document.getElementById('status-update-form').submit(); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openCreateOrder() {
+  document.getElementById('order-items-body').innerHTML = '';
+  orderCount = 0;
+  addOrderRow();
+  document.getElementById('modal-create').classList.add('open');
+}
+
+function buildProductOpts(selectedId='') {
+  return `<option value="">-- Chọn sản phẩm --</option>` + PRODUCTS.map(p =>
+    `<option value="${p.id}" data-unit="${p.base_unit}" data-price="${p.base_price}" ${p.id===selectedId?'selected':''}>${p.name}</option>`
+  ).join('');
+}
+
+function addOrderRow() {
+  const i = orderCount;
+  const html = `<tr id="order-row-${i}">
+    <td><select name="product_id_${i}" onchange="onProductChange(this,${i})">${buildProductOpts()}</select></td>
+    <td><input type="number" name="quantity_${i}" min="0.01" step="0.01" oninput="checkStock(${i})" id="qty-${i}"></td>
+    <td><span id="unit-${i}" style="font-size:13px;color:var(--muted2);">-</span></td>
+    <td><div class="price-display empty" id="price-display-${i}">Chọn sản phẩm</div><input type="hidden" name="unit_price_${i}" id="price-${i}" value="0"></td>
+    <td><span id="stock-${i}" style="font-size:11px;color:var(--muted);">-</span><button type="button" onclick="document.getElementById('order-row-${i}').remove()" style="background:none;border:none;cursor:pointer;color:var(--muted);float:right;">×</button></td>
+  </tr>`;
+  document.getElementById('order-items-body').insertAdjacentHTML('beforeend', html);
+  orderCount++;
+}
+
+function onProductChange(sel, i) {
+  const opt = sel.options[sel.selectedIndex];
+  const unit = opt.dataset.unit || '';
+  const price = parseFloat(opt.dataset.price) || 0;
+  document.getElementById(`unit-${i}`).textContent = unit || '-';
+  document.getElementById(`price-${i}`).value = price;
+  const priceDisplay = document.getElementById(`price-display-${i}`);
+  if (price > 0) {
+    priceDisplay.textContent = price.toLocaleString('vi-VN') + 'đ';
+    priceDisplay.classList.remove('empty');
+  } else {
+    priceDisplay.textContent = 'Chọn sản phẩm';
+    priceDisplay.classList.add('empty');
+  }
+  checkStock(i);
+}
+
+function checkStock(i) {
+  const sel = document.querySelector(`select[name="product_id_${i}"]`);
+  const qtyEl = document.getElementById(`qty-${i}`);
+  const stockEl = document.getElementById(`stock-${i}`);
+  if (!sel) return;
+  const pid = sel.value;
+  const stock = STOCKS[pid] !== undefined ? STOCKS[pid] : 0;
+  const qty = parseFloat(qtyEl.value) || 0;
+  const unit = sel.options[sel.selectedIndex].dataset.unit || '';
+  if (!pid) { stockEl.textContent = '-'; return; }
+  if (qty > stock) stockEl.innerHTML = `<span style="color:var(--danger)">Chỉ còn ${stock} ${unit}</span>`;
+  else stockEl.innerHTML = `<span style="color:${stock <= 10 ? 'var(--warning)' : 'var(--success)'}">Còn ${stock} ${unit}</span>`;
+}
+
+setTimeout(() => {
+  document.querySelectorAll('.toast').forEach(t => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); });
+}, 4000);
+</script>
+{% endblock %}

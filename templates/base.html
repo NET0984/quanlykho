@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TeLiet System{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
+
+    <style>
+        :root {
+            --bg: #0e0f11;
+            --surface: #16181c;
+            --surface2: #1e2126;
+            --surface3: #252930;
+            --border: #2a2d35;
+            --accent: #e8a427;
+            --accent2: #f0c060;
+            --text: #f0ede8;
+            --muted: #6b7280;
+            --muted2: #9ca3af;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --sidebar-w: 240px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            font-family: Google Sans Flex, sans-serif;
+            color: var(--text);
+            min-height: 100vh;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: var(--muted);
+        }
+        .sidebar-brand {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 10px;
+            transition: background-color 0.15s;
+        }
+        .sidebar-brand:hover {
+            background-color: var(--surface);
+        }
+        .brand-icon {
+            width: 32px; height: 32px;
+            background: var(--accent);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            flex-shrink: 0;
+        }
+        .brand-text { font-family: Google Sans Flex, sans-serif; font-weight: 800; font-size: 20px; color: var(--text); }
+        .brand-text span { color: var(--accent); }
+        .sidebar-section { padding: 20px 12px 8px; }
+        .section-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--muted);
+            padding: 0 8px;
+            margin-bottom: 6px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--muted2);
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.15s;
+            cursor: pointer;
+            position: relative;
+        }
+        .nav-item:hover { background: var(--surface2); color: var(--text); }
+        .nav-item.active { background: rgba(232,164,39,0.12); color: var(--accent); }
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 20%; height: 60%;
+            width: 3px;
+            background: var(--accent);
+            border-radius: 0 2px 2px 0;
+        }
+        .nav-icon { width: 16px; height: 16px; flex-shrink: 0; }
+        .nav-badge {
+            margin-left: auto;
+            background: var(--danger);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 16px 12px;
+            border-top: 1px solid var(--border);
+        }
+        .user-card {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px;
+            background: var(--surface2);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .user-trigger {
+            width: 100%;
+            border: 1px solid transparent;
+            cursor: pointer;
+            text-align: left;
+            color: inherit;
+            transition: all 0.15s;
+        }
+        .user-trigger:hover {
+            background: var(--surface3);
+            border-color: var(--border);
+        }
+        .user-trigger:focus-visible {
+            outline: 2px solid rgba(232,164,39,0.35);
+            outline-offset: 2px;
+        }
+        .user-avatar {
+            width: 32px; height: 32px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: Google Sans Flex, sans-serif;
+            font-weight: 800;
+            font-size: 13px;
+            color: #0e0f11;
+            flex-shrink: 0;
+        }
+        .user-info { flex: 1; min-width: 0; }
+        .user-name { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-role { font-size: 11px; color: var(--muted); }
+        .user-popup-wrap {
+            position: relative;
+        }
+        .user-popup {
+            position: fixed;
+            inset: 0;
+            z-index: 2147483647;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            isolation: isolate;
+        }
+        .user-popup[hidden] { display: none !important; }
+        .user-popup-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(3, 4, 6, 0.74);
+            backdrop-filter: blur(10px);
+        }
+        .user-popup-dialog {
+            position: relative;
+            width: min(430px, 100%);
+            background: #1a1d22;
+            border: 1px solid #2e3440;
+            border-radius: 16px;
+            box-shadow: 0 28px 60px rgba(0, 0, 0, 0.52);
+            overflow: hidden;
+            z-index: 1;
+        }
+        .user-popup-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 20px 20px 12px;
+        }
+        .user-popup-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #f8fafc;
+        }
+        .user-popup-close {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            border: 1px solid #323844;
+            background: #232831;
+            color: #9ca3af;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.15s;
+        }
+        .user-popup-close:hover {
+            color: var(--text);
+            border-color: #4b5563;
+        }
+        .user-popup-body {
+            padding: 2px 20px 18px;
+        }
+        .user-popup-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .user-popup-field.full {
+            grid-column: 1 / -1;
+        }
+        .user-popup-label {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .user-popup-input {
+            width: 100%;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid #313744;
+            background: #23272d;
+            color: #f8fafc;
+            padding: 0 12px;
+            font-family: Google Sans Flex, sans-serif;
+            font-size: 13px;
+            outline: none;
+        }
+        .user-popup-input:focus {
+            border-color: rgba(240, 178, 51, 0.85);
+            box-shadow: 0 0 0 3px rgba(240, 178, 51, 0.12);
+        }
+        .user-popup-textarea {
+            min-height: 64px;
+            resize: none;
+            padding: 10px 12px;
+            line-height: 1.45;
+        }
+        .user-popup-input.is-error {
+            border-color: rgba(239, 68, 68, 0.9);
+        }
+        .user-popup-help {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        .user-popup-error {
+            font-size: 11px;
+            color: #f87171;
+            margin-top: 5px;
+            min-height: 14px;
+        }
+        .user-popup-error:empty {
+            display: none;
+        }
+        .user-popup-status {
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #2c3340;
+            background: #23272d;
+            font-size: 12px;
+            line-height: 1.45;
+            color: #cbd5e1;
+        }
+        .user-popup-status[hidden] {
+            display: none !important;
+        }
+        .user-popup-status.success {
+            border-color: rgba(34, 197, 94, 0.35);
+            color: #86efac;
+        }
+        .user-popup-status.error {
+            border-color: rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+        }
+        .legacy-profile-view {
+            display: none;
+        }
+        .user-popup-divider {
+            height: 1px;
+            background: #2c3340;
+            margin: 14px 0 0;
+        }
+        .user-popup-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding-top: 14px;
+        }
+        .user-popup-btn {
+            height: 32px;
+            padding: 0 16px;
+            border-radius: 8px;
+            border: 1px solid #323844;
+            background: #232831;
+            color: #cbd5e1;
+            font-family: Google Sans Flex, sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .user-popup-btn:hover {
+            border-color: #4b5563;
+            color: #f8fafc;
+        }
+        .user-popup-btn.primary {
+            background: #f0b233;
+            border-color: #f0b233;
+            color: #0f1115;
+        }
+        .user-popup-btn.primary:hover {
+            background: #f5bf56;
+            border-color: #f5bf56;
+        }
+        @media (max-width: 640px) {
+            .user-popup {
+                padding: 16px;
+            }
+            .user-popup-dialog {
+                width: 100%;
+            }
+            .user-popup-grid {
+                grid-template-columns: 1fr;
+            }
+            .user-popup-field.full {
+                grid-column: auto;
+            }
+        }
+        /* ===== MAIN ===== */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .topbar {
+            height: 56px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+        .page-breadcrumb {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12px; color: var(--muted);
+        }
+        .page-breadcrumb span { color: var(--text); font-weight: 500; }
+        .topbar-right { display: flex; align-items: center; gap: 12px; }
+        .icon-btn {
+            width: 34px; height: 34px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: var(--muted2);
+            position: relative;
+            transition: all 0.15s;
+            text-decoration: none;
+        }
+        .icon-btn:focus-visible { outline: 2px solid rgba(232,164,39,0.4); outline-offset: 2px; }
+        .icon-btn:hover { background: var(--surface3); color: var(--text); }
+        .notif-dot {
+            position: absolute;
+            top: 6px; right: 6px;
+            width: 6px; height: 6px;
+            background: var(--danger);
+            border-radius: 50%;
+            border: 1px solid var(--surface);
+        }
+        .notif-count {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 4px;
+            border-radius: 999px;
+            background: var(--danger);
+            color: #fff;
+            font-size: 10px;
+            line-height: 16px;
+            text-align: center;
+            font-weight: 700;
+            border: 1px solid var(--surface);
+        }
+        .notif-wrap { position: relative; }
+        .notif-panel {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: min(520px, calc(100vw - 24px));
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 20px 36px rgba(0, 0, 0, 0.45);
+            overflow: hidden;
+            z-index: 60;
+        }
+        .notif-panel[hidden] { display: none !important; }
+        .notif-head {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .notif-head-title { font-size: 13px; font-weight: 700; color: var(--text); }
+        .notif-head-sub { font-size: 11px; color: var(--muted); }
+        .notif-list {
+            max-height: 360px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) var(--surface);
+        }
+        .notif-list::-webkit-scrollbar { width: 8px; }
+        .notif-list::-webkit-scrollbar-track { background: var(--surface); }
+        .notif-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 999px;
+            border: 1px solid var(--surface);
+        }
+        .notif-list::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+        .notif-item {
+            display: block;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            color: inherit;
+            transition: background-color 0.15s;
+        }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-item:hover { background: var(--surface2); }
+        .notif-item.danger { border-left: 3px solid var(--danger); }
+        .notif-item.warning { border-left: 3px solid var(--warning); }
+        .notif-item.info { border-left: 3px solid var(--info); }
+        .notif-item-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .notif-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+        .notif-item-head .notif-title { margin-bottom: 0; }
+        .notif-message { font-size: 12px; color: var(--muted2); line-height: 1.35; margin-bottom: 6px; }
+        .notif-expand {
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--muted2);
+            border-radius: 6px;
+            font-family: Google Sans Flex, sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .notif-expand:hover { color: var(--text); border-color: var(--accent); }
+        .notif-details {
+            margin: 8px 0;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 8px;
+        }
+        .notif-details[hidden] { display: none !important; }
+        .notif-details-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            color: var(--muted);
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+        .notif-details-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            max-height: 160px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) var(--surface2);
+        }
+        .notif-details-list::-webkit-scrollbar { width: 7px; }
+        .notif-details-list::-webkit-scrollbar-track { background: var(--surface2); }
+        .notif-details-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 999px;
+            border: 1px solid var(--surface2);
+        }
+        .notif-details-list li {
+            font-size: 12px;
+            color: var(--text);
+            padding: 4px 2px;
+            border-bottom: 1px dashed rgba(156, 163, 175, 0.2);
+            word-break: break-word;
+        }
+        .notif-details-list li:last-child { border-bottom: none; }
+        .notif-details-more {
+            margin-top: 6px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+        .notif-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--accent);
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .notif-action:hover { color: var(--accent2); }
+        .notif-empty {
+            padding: 18px 14px;
+            color: var(--muted);
+            font-size: 12px;
+            text-align: center;
+        }
+        /* ===== CONTENT ===== */
+        .content { flex: 1; padding: 28px; overflow-y: auto; }
+        .content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .content::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        .content::-webkit-scrollbar-thumb:hover {
+            background: var(--muted);
+        }
+        .page-header {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            margin-bottom: 28px;
+        }
+        .page-title { font-family: Google Sans Flex, sans-serif; font-size: 22px; font-weight: 700; color: var(--text); }
+        .page-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-family: Google Sans Flex, sans-serif;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer; border: none;
+            transition: all 0.15s;
+            text-decoration: none;
+        }
+        .btn-primary { background: var(--accent); color: #0e0f11; }
+        .btn-primary:hover { background: var(--accent2); }
+        .btn-ghost { background: var(--surface2); color: var(--muted2); border: 1px solid var(--border); }
+        .btn-ghost:hover { color: var(--text); background: var(--surface3); }
+        .btn-danger { background: rgba(239,68,68,0.12); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+        .btn-danger:hover { background: rgba(239,68,68,0.2); }
+        /* ===== CARD & TABLE ===== */
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+        .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .card-title { font-family: Google Sans Flex, sans-serif; font-size: 14px; font-weight: 700; color: var(--text); }
+        .card-actions { display: flex; gap: 8px; }
+        .search-wrap { position: relative; }
+        .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); width: 13px; height: 13px; pointer-events: none; }
+        .search-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 8px 12px 8px 32px; font-family: Google Sans Flex, sans-serif; font-size: 12px; color: var(--text); outline: none; width: 220px; transition: border-color 0.15s; }
+        .search-input::placeholder { color: var(--muted); }
+        .search-input:focus { border-color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; }
+        thead th { padding: 12px 20px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 600; text-align: left; background: var(--surface2); border-bottom: 1px solid var(--border); }
+        tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: var(--surface2); }
+        td { padding: 13px 20px; font-size: 13px; color: var(--muted2); vertical-align: middle; }
+        td.bold { color: var(--text); font-weight: 500; }
+        .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .badge-dot { width: 5px; height: 5px; border-radius: 50%; }
+        .badge.processing { background: rgba(245,158,11,0.12); color: var(--warning); }
+        .badge.done { background: rgba(34,197,94,0.12); color: var(--success); }
+        .badge.cancel { background: rgba(239,68,68,0.12); color: var(--danger); }
+        .badge.pending { background: rgba(59,130,246,0.12); color: var(--info); }
+        .action-btn { background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; transition: color 0.15s; }
+        .action-btn:hover { color: var(--text); }
+        .table-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted); }
+        .pagination { display: flex; gap: 4px; }
+        .pg-btn { width: 28px; height: 28px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; color: var(--muted2); transition: all 0.15s; }
+        .pg-btn:hover { background: var(--surface3); color: var(--text); }
+        .pg-btn.active { background: var(--accent); border-color: var(--accent); color: #0e0f11; font-weight: 700; }
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="{% url 'dashboard' %}" class="sidebar-brand" style="text-decoration: none; cursor: pointer;">
+            <div class="brand-icon"></div>
+            <span class="brand-text">Te<span>Liet</span></span>
+        </a>
+
+        <div class="sidebar-section">
+            <div class="section-label">Tổng quan</div>
+            <a href="{% url 'dashboard' %}" class="nav-item {% block nav_dashboard %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Dashboard
+            </a>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="section-label">Nghiệp vụ</div>
+            <a href="{% url 'product:product_list' %}" class="nav-item {% block nav_products %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                Sản phẩm
+            </a>
+            <a href="{% url 'order:sales_list' %}" class="nav-item {% block nav_orders %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+                Đơn hàng
+            </a>
+        </div>
+
+        {% if user.role != 'SALE' %}
+        <div class="sidebar-section">
+            <div class="section-label">Kho hàng</div>
+            <a href="{% url 'warehouse:export_list' %}" class="nav-item {% block nav_export %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="12 19 12 5"/><polyline points="5 12 12 5 19 12"/>
+                </svg>
+                Xuất kho
+            </a>
+            <a href="{% url 'warehouse:import_list' %}" class="nav-item {% block nav_import %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="12 5 12 19"/><polyline points="19 12 12 19 5 12"/>
+                </svg>
+                Nhập kho
+            </a>
+            <a href="{% url 'warehouse:stock_list' %}" class="nav-item {% block nav_stock %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                Tồn kho
+            </a>
+            <a href="{% url 'reports:stock_report' %}" class="nav-item {% block nav_stock_report %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 4-5"/>
+                </svg>
+                Báo cáo kho
+            </a>
+            <a href="{% url 'inventory:audit_list' %}" class="nav-item {% block nav_inventory_audits %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+                Kiểm kê
+            </a>
+            <a href="{% url 'inventory:loss_list' %}" class="nav-item {% block nav_inventory_losses %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v20"/><path d="M5 7h7a4 4 0 0 1 0 8H9a4 4 0 0 0 0 8h10"/>
+                </svg>
+                Hao hụt
+            </a>
+            <a href="{% url 'inventory:discrepancy_report' %}" class="nav-item {% block nav_inventory_discrepancy %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+                Chênh lệch kho
+            </a>
+        </div>
+        {% endif %}
+
+        <div class="sidebar-section">
+            <div class="section-label">Cấu hình</div>
+            <a href="{% url 'product:category_list' %}" class="nav-item {% block nav_categories %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                Danh mục
+            </a>
+            <a href="{% url 'product:units_list' %}" class="nav-item {% block nav_units %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Đơn vị & Quy đổi
+            </a>
+        </div>
+
+        <!-- <div class="sidebar-section">
+            <div class="section-label">Hệ thống</div>
+            <a href="{% url 'accounts' %}" class="nav-item {% block nav_accounts %}{% endblock %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Tài khoản
+            </a>
+        </div> -->
+
+        <div class="sidebar-footer">
+            <div class="user-popup-wrap" id="userPopupWrap">
+                <button
+                    type="button"
+                    class="user-card user-trigger"
+                    id="userPopupToggle"
+                    aria-expanded="false"
+                    aria-haspopup="dialog"
+                    aria-controls="userPopupPanel"
+                >
+                    <div class="user-avatar">{{ user.username|slice:":1"|upper }}</div>
+                    <div class="user-info">
+                        <div class="user-name">{{ user.full_name|default:user.username }}</div>
+                        <div class="user-role">{{ user.get_role_display|default:user.role }}</div>
+                    </div>
+                </button>
+
+            </div>
+            <a href="{% url 'logout' %}" class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Đăng xuất
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <div class="page-breadcrumb">
+                TeLiet &nbsp;/&nbsp; <span>{% block breadcrumb %}{% endblock %}</span>
+            </div>
+            <div class="topbar-right">
+                <div class="notif-wrap" id="notifWrap">
+                    <button type="button" class="icon-btn" id="notifToggle" aria-expanded="false" aria-haspopup="true" aria-controls="notifPanel" title="Thông báo">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        {% if notifications_count|default:0 > 0 %}
+                        <span class="notif-count">{% if notifications_count > 99 %}99+{% else %}{{ notifications_count }}{% endif %}</span>
+                        {% endif %}
+                    </button>
+
+                    <div class="notif-panel" id="notifPanel" hidden>
+                        <div class="notif-head">
+                            <div>
+                                <div class="notif-head-title">Thông báo hệ thống</div>
+                                <div class="notif-head-sub">{{ notifications_count|default:0 }} mục cần chú ý</div>
+                            </div>
+                        </div>
+                        <div class="notif-list">
+                            {% for item in notifications %}
+                            <div class="notif-item {{ item.level }}">
+                                <div class="notif-item-head">
+                                    <div class="notif-title">{{ item.title }}</div>
+                                    {% if item.details %}
+                                    <button
+                                        type="button"
+                                        class="notif-expand"
+                                        data-notif-expand="notifDetails{{ forloop.counter }}"
+                                        aria-expanded="false"
+                                    >Xem chi tiết</button>
+                                    {% endif %}
+                                </div>
+                                <div class="notif-message">{{ item.message }}</div>
+
+                                {% if item.details %}
+                                <div class="notif-details" id="notifDetails{{ forloop.counter }}" hidden>
+                                    <div class="notif-details-title">{{ item.details_title }}</div>
+                                    <ul class="notif-details-list">
+                                        {% for detail in item.details %}
+                                        <li>{{ detail }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% if item.hidden_count > 0 %}
+                                    <div class="notif-details-more">Còn {{ item.hidden_count }} mục chưa hiển thị.</div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+
+                                <a href="{{ item.url }}" class="notif-action">{{ item.action }}</a>
+                            </div>
+                            {% empty %}
+                            <div class="notif-empty">Hiện chưa có thông báo mới.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <div class="user-popup" id="userPopupPanel" hidden>
+        <div class="user-popup-backdrop" data-user-close></div>
+        <div class="user-popup-dialog" role="dialog" aria-modal="true" aria-labelledby="userPopupTitle">
+            <div class="user-popup-head">
+                <div class="user-popup-title" id="userPopupTitle">Chỉnh sửa tài khoản</div>
+                <button type="button" class="user-popup-close" data-user-close aria-label="Đóng popup">×</button>
+            </div>
+            <form class="user-popup-body" id="userPopupForm" action="{% url 'profile_settings' %}" method="post" novalidate>
+                {% csrf_token %}
+                <div class="user-popup-status" id="userPopupStatus" hidden></div>
+                <div class="user-popup-grid">
+                    <div class="user-popup-field">
+                        <label class="user-popup-label" for="profileFullName">Họ và tên</label>
+                        <input class="user-popup-input" id="profileFullName" name="full_name" type="text" value="{{ user.full_name|default:user.username }}">
+                        <div class="user-popup-error" data-error-for="full_name"></div>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label" for="profileUsername">Tên đăng nhập</label>
+                        <input class="user-popup-input" id="profileUsername" type="text" value="{{ user.username }}" readonly>
+                    </div>
+                    <div class="user-popup-field full">
+                        <label class="user-popup-label" for="profileEmail">Email</label>
+                        <input class="user-popup-input" id="profileEmail" name="email" type="email" value="{{ user.email }}">
+                        <div class="user-popup-error" data-error-for="email"></div>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label" for="profileRole">Vai trò</label>
+                        <input class="user-popup-input" id="profileRole" type="text" value="{{ user.get_role_display|default:user.role }}" readonly>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label" for="profilePhone">Số điện thoại</label>
+                        <input class="user-popup-input" id="profilePhone" name="phone_number" type="text" value="{{ user.phone_number|default:'' }}">
+                        <div class="user-popup-error" data-error-for="phone_number"></div>
+                    </div>
+                    <div class="user-popup-field full">
+                        <label class="user-popup-label" for="profileAddress">Địa chỉ</label>
+                        <textarea class="user-popup-input user-popup-textarea" id="profileAddress" name="address">{{ user.address|default:"" }}</textarea>
+                        <div class="user-popup-error" data-error-for="address"></div>
+                    </div>
+                </div>
+                <div class="user-popup-divider"></div>
+                <div class="user-popup-grid" style="padding-top: 14px;">
+                    <div class="user-popup-field full">
+                        <label class="user-popup-label" for="profileCurrentPassword">Mật khẩu hiện tại</label>
+                        <input class="user-popup-input" id="profileCurrentPassword" name="current_password" type="password" autocomplete="current-password">
+                        <div class="user-popup-help">Bỏ trống nếu không muốn đổi mật khẩu.</div>
+                        <div class="user-popup-error" data-error-for="current_password"></div>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label" for="profileNewPassword">Mật khẩu mới</label>
+                        <input class="user-popup-input" id="profileNewPassword" name="new_password" type="password" autocomplete="new-password">
+                        <div class="user-popup-error" data-error-for="new_password"></div>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label" for="profileNewPasswordConfirm">Xác nhận mật khẩu mới</label>
+                        <input class="user-popup-input" id="profileNewPasswordConfirm" name="new_password_confirm" type="password" autocomplete="new-password">
+                        <div class="user-popup-error" data-error-for="new_password_confirm"></div>
+                    </div>
+                </div>
+                <div class="user-popup-error" data-error-for="__all__"></div>
+                <div class="user-popup-divider"></div>
+                <div class="user-popup-actions">
+                    <button type="button" class="user-popup-btn" data-user-close>Hủy</button>
+                    <button type="submit" class="user-popup-btn primary" id="userPopupSubmit">Cập nhật</button>
+                </div>
+            </form>
+            <div class="user-popup-body legacy-profile-view">
+                <div class="user-popup-grid">
+                    <div class="user-popup-field">
+                        <label class="user-popup-label">Họ và tên</label>
+                        <input class="user-popup-input" type="text" value="{{ user.full_name|default:user.username }}" readonly>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label">Tên đăng nhập</label>
+                        <input class="user-popup-input" type="text" value="{{ user.username }}" readonly>
+                    </div>
+                    <div class="user-popup-field full">
+                        <label class="user-popup-label">Email</label>
+                        <input class="user-popup-input" type="text" value="{{ user.email|default:'Chưa cập nhật' }}" readonly>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label">Vai trò</label>
+                        <input class="user-popup-input" type="text" value="{{ user.get_role_display|default:user.role }}" readonly>
+                    </div>
+                    <div class="user-popup-field">
+                        <label class="user-popup-label">Số điện thoại</label>
+                        <input class="user-popup-input" type="text" value="{{ user.phone_number|default:'Chưa cập nhật' }}" readonly>
+                    </div>
+                    <div class="user-popup-field full">
+                        <label class="user-popup-label">Địa chỉ</label>
+                        <textarea class="user-popup-input user-popup-textarea" readonly>{{ user.address|default:"Chưa cập nhật" }}</textarea>
+                    </div>
+                </div>
+                <div class="user-popup-divider"></div>
+                <div class="user-popup-actions">
+                    <button type="button" class="user-popup-btn primary" data-user-close>Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Token Management Utility -->
+    <script>
+        // ============================================================
+        // TOKEN MANAGEMENT UTILS - Token và localStorage operations
+        // ============================================================
+        
+        function saveTokens(accessToken, refreshToken, userRole, userId, userName) {
+            localStorage.setItem('access_token', accessToken);
+            localStorage.setItem('refresh_token', refreshToken);
+            localStorage.setItem('user_role', userRole);
+            localStorage.setItem('user_id', userId);
+            localStorage.setItem('user_name', userName);
+            localStorage.setItem('token_saved_at', new Date().toISOString());
+        }
+        
+        function getAccessToken() {
+            return localStorage.getItem('access_token');
+        }
+        
+        function getRefreshToken() {
+            return localStorage.getItem('refresh_token');
+        }
+        
+        function hasAccessToken() {
+            return !!localStorage.getItem('access_token');
+        }
+        
+        function clearTokens() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user_role');
+            localStorage.removeItem('user_id');
+            localStorage.removeItem('user_name');
+            localStorage.removeItem('token_saved_at');
+        }
+        
+        function getAuthHeader() {
+            const token = getAccessToken();
+            if (token) {
+                return {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                };
+            }
+            return {
+                'Content-Type': 'application/json'
+            };
+        }
+        
+        async function logout() {
+            const refreshToken = getRefreshToken();
+            
+            try {
+                if (refreshToken) {
+                    await fetch('/api/xac-thuc/logout/', {
+                        method: 'POST',
+                        headers: getAuthHeader(),
+                        body: JSON.stringify({ refresh_token: refreshToken })
+                    });
+                }
+            } catch (error) {
+                console.error('Logout API error:', error);
+            }
+            
+            clearTokens();
+            window.location.href = '/';
+        }
+
+        (function initNotificationPopup() {
+            const wrap = document.getElementById('notifWrap');
+            const toggle = document.getElementById('notifToggle');
+            const panel = document.getElementById('notifPanel');
+
+            if (!wrap || !toggle || !panel) {
+                return;
+            }
+
+            function closePanel() {
+                panel.hidden = true;
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+
+            function openPanel() {
+                panel.hidden = false;
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+
+            toggle.addEventListener('click', function (event) {
+                event.stopPropagation();
+                if (panel.hidden) {
+                    openPanel();
+                } else {
+                    closePanel();
+                }
+            });
+
+            panel.addEventListener('click', function (event) {
+                const expandButton = event.target.closest('[data-notif-expand]');
+                if (!expandButton) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                const targetId = expandButton.getAttribute('data-notif-expand');
+                const details = panel.querySelector('#' + targetId);
+                if (!details) {
+                    return;
+                }
+
+                const willOpen = details.hidden;
+                details.hidden = !willOpen;
+                expandButton.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+                expandButton.textContent = willOpen ? 'Thu gọn' : 'Xem chi tiết';
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!wrap.contains(event.target)) {
+                    closePanel();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closePanel();
+                }
+            });
+        })();
+
+        (function initUserPopup() {
+            const wrap = document.getElementById('userPopupWrap');
+            const toggle = document.getElementById('userPopupToggle');
+            const panel = document.getElementById('userPopupPanel');
+            const closeButtons = panel ? panel.querySelectorAll('[data-user-close]') : [];
+            const form = document.getElementById('userPopupForm');
+            const submitButton = document.getElementById('userPopupSubmit');
+            const statusBox = document.getElementById('userPopupStatus');
+            const fullNameDisplay = document.querySelector('.sidebar-footer .user-name');
+            const roleDisplay = document.querySelector('.sidebar-footer .user-role');
+
+            if (!wrap || !toggle || !panel || !form) {
+                return;
+            }
+
+            function closePanel() {
+                panel.hidden = true;
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+
+            function openPanel() {
+                panel.hidden = false;
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+
+            function clearErrors() {
+                form.querySelectorAll('.user-popup-input').forEach(function (input) {
+                    input.classList.remove('is-error');
+                });
+                form.querySelectorAll('[data-error-for]').forEach(function (node) {
+                    node.textContent = '';
+                });
+            }
+
+            function showStatus(message, type) {
+                if (!statusBox) {
+                    return;
+                }
+                statusBox.hidden = false;
+                statusBox.className = 'user-popup-status ' + type;
+                statusBox.textContent = message;
+            }
+
+            function clearStatus() {
+                if (!statusBox) {
+                    return;
+                }
+                statusBox.hidden = true;
+                statusBox.className = 'user-popup-status';
+                statusBox.textContent = '';
+            }
+
+            function applyErrors(errors) {
+                Object.keys(errors || {}).forEach(function (key) {
+                    const errorNode = form.querySelector('[data-error-for="' + key + '"]');
+                    const inputNode = form.querySelector('[name="' + key + '"]');
+                    if (errorNode) {
+                        errorNode.textContent = errors[key];
+                    }
+                    if (inputNode) {
+                        inputNode.classList.add('is-error');
+                    }
+                });
+            }
+
+            toggle.addEventListener('click', function (event) {
+                event.stopPropagation();
+                if (panel.hidden) {
+                    clearStatus();
+                    openPanel();
+                } else {
+                    closePanel();
+                }
+            });
+
+            panel.addEventListener('click', function (event) {
+                event.stopPropagation();
+            });
+
+            closeButtons.forEach(function (button) {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    closePanel();
+                });
+            });
+
+            form.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                clearErrors();
+                clearStatus();
+
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Đang lưu...';
+                }
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: new FormData(form)
+                    });
+
+                    const payload = await response.json();
+
+                    if (!response.ok || !payload.ok) {
+                        applyErrors(payload.errors || {});
+                        showStatus(payload.message || 'Không thể cập nhật thông tin.', 'error');
+                        return;
+                    }
+
+                    if (fullNameDisplay && payload.user && payload.user.full_name) {
+                        fullNameDisplay.textContent = payload.user.full_name;
+                    }
+                    if (roleDisplay && payload.user && payload.user.role_display) {
+                        roleDisplay.textContent = payload.user.role_display;
+                    }
+
+                    form.querySelector('#profileCurrentPassword').value = '';
+                    form.querySelector('#profileNewPassword').value = '';
+                    form.querySelector('#profileNewPasswordConfirm').value = '';
+                    showStatus(payload.message || 'Đã cập nhật thông tin tài khoản.', 'success');
+                } catch (error) {
+                    showStatus('Có lỗi xảy ra khi cập nhật thông tin.', 'error');
+                } finally {
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Cập nhật';
+                    }
+                }
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!wrap.contains(event.target)) {
+                    closePanel();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closePanel();
+                }
+            });
+        })();
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

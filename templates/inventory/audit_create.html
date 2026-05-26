@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Tạo phiên kiểm kê — TeLiet System{% endblock %}
+{% block breadcrumb %}Tạo phiên kiểm kê{% endblock %}
+{% block nav_inventory_audits %}active{% endblock %}
+
+{% block extra_css %}
+.field{margin-bottom:16px;}
+.field-label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;font-weight:600;}
+.field input, .field select, .field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-size:13px;outline:none;}
+.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,164,39,.08);}
+.multi-select{min-height:300px;}
+.message-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.message-item{padding:10px 12px;border-radius:8px;font-size:13px;border:1px solid var(--border);background:var(--surface2);}
+.message-item.error, .message-item.danger{border-color:rgba(239,68,68,.35);color:#ffb4b4;}
+.message-item.success{border-color:rgba(34,197,94,.35);color:#9de7b4;}
+.message-item.warning{border-color:rgba(245,158,11,.35);color:#ffd37e;}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Tạo phiên kiểm kê mới</h1>
+        <p class="page-sub">Chọn ngày, sản phẩm và bắt đầu nhập số liệu thực tế</p>
+    </div>
+    <a href="{% url 'inventory:audit_list' %}" class="btn btn-ghost">← Quay lại danh sách</a>
+</div>
+
+{% if messages %}
+<div class="message-list">
+    {% for message in messages %}
+    <div class="message-item {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card" style="padding:24px;">
+    <form method="post">
+        {% csrf_token %}
+        <div style="display:grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+            <div class="field">
+                <label class="field-label">Ngày kiểm kê</label>
+                <input type="date" name="audit_date" value="{{ default_audit_date }}" required>
+            </div>
+            <div class="field">
+                <label class="field-label">Ghi chú</label>
+                <input type="text" name="note" placeholder="Mô tả ngắn cho phiên kiểm kê">
+            </div>
+        </div>
+        
+        <div class="field" style="margin-top:10px;">
+            <label class="field-label">Sản phẩm kiểm kê (giữ Ctrl/Cmd để chọn nhiều)</label>
+            <select class="multi-select" name="product_ids" multiple required>
+                {% for product in products %}
+                <option value="{{ product.id }}">{{ product.name }}{% if product.category %} — {{ product.category.name }}{% endif %}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-top:24px; display:flex; justify-content: flex-end; gap: 12px;">
+            <a href="{% url 'inventory:audit_list' %}" class="btn btn-ghost">Hủy bỏ</a>
+            <button type="submit" class="btn btn-primary">Khởi tạo kiểm kê</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

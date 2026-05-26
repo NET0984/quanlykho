@@ -1,0 +1,564 @@
+{% extends "base.html" %}
+
+{% block title %}Nh&#7853;p kho - TeLiet System{% endblock %}
+{% block breadcrumb %}Nh&#7853;p kho{% endblock %}
+{% block nav_import %}active{% endblock %}
+
+{% block extra_css %}
+.status-badge { display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600; }
+.status-badge.PENDING  { background:rgba(245,158,11,.12);color:var(--warning); }
+.status-badge.APPROVED { background:rgba(34,197,94,.12);color:var(--success); }
+.status-badge.REJECTED { background:rgba(239,68,68,.12);color:var(--danger); }
+.filter-tabs { display:flex;gap:8px;flex-wrap:wrap; }
+.filter-tab { padding:6px 16px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted2);text-decoration:none;transition:all .15s; }
+.filter-tab:hover,.filter-tab.active { background:rgba(232,164,39,.12);border-color:rgba(232,164,39,.3);color:var(--accent); }
+.search-form{display:flex;align-items:center;gap:8px;}
+.search-form input{padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);outline:none;transition:border-color .15s;width:280px;}
+.search-form input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,164,39,.08);}
+.search-form button{padding:8px 14px;background:var(--accent);color:#0e0f11;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:5px;}
+.search-form button:hover{filter:brightness(1.1);}
+.filter-search-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;}
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;}
+.stat-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.stat-value{font-size:32px;font-weight:700;color:var(--accent);font-family:Google Sans Flex,sans-serif;}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-backdrop.open{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:760px;padding:28px;transform:translateY(16px);transition:transform .2s;max-height:90vh;overflow-y:auto;}
+.modal-backdrop.open .modal{transform:translateY(0);}
+.modal-sm{max-width:420px;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.modal-title{font-family:Google Sans Flex,sans-serif;font-size:18px;font-weight:700;color:var(--text);}
+.modal-close{width:30px;height:30px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted2);}
+.field{margin-bottom:16px;}
+.field-label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;}
+.field input,.field select,.field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:Google Sans Flex,sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color .15s;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,164,39,.08);}
+.field textarea{min-height:80px;resize:vertical;}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+.items-table{width:100%;border-collapse:collapse;margin-bottom:12px;}
+.items-table th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:8px 10px;background:var(--surface2);border-bottom:1px solid var(--border);text-align:left;}
+.items-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.items-table td input,.items-table td select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);outline:none;width:100%;}
+.items-table td input:focus,.items-table td select:focus{border-color:var(--accent);}
+.btn-icon{background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;transition:color .15s;}
+.btn-icon:hover{color:var(--danger);}
+.rejection-box{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#fca5a5;}
+.rejection-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--danger);font-weight:600;margin-bottom:4px;}
+.toast-container{position:fixed;bottom:28px;right:28px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.4);transform:translateX(80px);opacity:0;transition:all .3s;min-width:260px;}
+.toast.show{transform:translateX(0);opacity:1;}
+.toast.success{border-left:3px solid var(--success);}
+.toast.warning{border-left:3px solid var(--warning);}
+.toast.danger{border-left:3px solid var(--danger);}
+.price-hint{font-size:10px;color:var(--muted);margin-top:2px;}
+/* Pagination - giống product_list */
+.pagination-wrap{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:1px solid var(--border);}
+.pagination{display:flex;gap:4px;}
+.pg-btn{min-width:30px;height:30px;padding:0 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--muted2);text-decoration:none;transition:all .15s;}
+.pg-btn:hover{background:var(--surface3);color:var(--text);}
+.pg-btn.active{background:var(--accent);border-color:var(--accent);color:#0e0f11;font-weight:700;}
+.pg-btn.disabled{opacity:.4;cursor:not-allowed;pointer-events:none;}
+{% endblock %}
+
+{% block content %}
+<div id="url-data"
+  data-approve-url="{% url 'warehouse:import_approve' pk='00000000-0000-0000-0000-000000000000' %}"
+  data-reject-url="{% url 'warehouse:import_reject' pk='00000000-0000-0000-0000-000000000000' %}"
+  data-resubmit-url="{% url 'warehouse:import_resubmit' pk='00000000-0000-0000-0000-000000000000' %}"
+  style="display:none">
+</div>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Phi&#7871;u nh&#7853;p kho</h1>
+    <p class="page-sub">Qu&#7843;n l&#253; nh&#7853;p h&#224;ng v&#224; duy&#7879;t t&#7891;n kho</p>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <a class="btn btn-ghost" href="{% url 'warehouse:import_excel_template' %}">T&#7841;o m&#7851;u Excel</a>
+    <a class="btn btn-ghost" href="{% url 'warehouse:import_excel_export' %}?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search_query %}search={{ search_query|urlencode }}{% endif %}">Xu&#7845;t Excel</a>
+    {% if user_role == 'KHO' or user_role == 'ADMIN' %}
+    <button type="button" class="btn btn-ghost" onclick="openImportExcelModal()">Import Excel</button>
+    <button class="btn btn-primary" onclick="openCreateModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      T&#7841;o phi&#7871;u nh&#7853;p
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-card"><div class="stat-label">Tổng Phiếu</div><div class="stat-value">{{ stats.total_receipts|floatformat:0 }}</div></div>
+  <div class="stat-card"><div class="stat-label">Phiếu Chờ Duyệt</div><div class="stat-value">{{ stats.pending_receipts|floatformat:0 }}</div></div>
+  <div class="stat-card"><div class="stat-label">Tổng Số SP</div><div class="stat-value">{{ stats.total_items|floatformat:0 }}</div></div>
+  <div class="stat-card"><div class="stat-label">Giao Dịch Hôm Nay</div><div class="stat-value">{{ stats.today_transactions|floatformat:0 }}</div></div>
+</div>
+
+<div class="filter-search-row">
+  <div class="filter-tabs">
+    <a href="?status={% if search_query %}&search={{ search_query }}{% endif %}" class="filter-tab {% if not status_filter %}active{% endif %}">Tất cả</a>
+    <a href="?status=PENDING{% if search_query %}&search={{ search_query }}{% endif %}"  class="filter-tab {% if status_filter == 'PENDING'  %}active{% endif %}">⏳ Chờ duyệt</a>
+    <a href="?status=APPROVED{% if search_query %}&search={{ search_query }}{% endif %}" class="filter-tab {% if status_filter == 'APPROVED' %}active{% endif %}">✅ Đã duyệt</a>
+    <a href="?status=REJECTED{% if search_query %}&search={{ search_query }}{% endif %}" class="filter-tab {% if status_filter == 'REJECTED' %}active{% endif %}">❌ Từ chối</a>
+  </div>
+  <form method="get" class="search-form">
+    {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+    <input type="text" name="search" placeholder="Tìm theo mã phiếu, ghi chú..." value="{{ search_query }}">
+    <button type="submit">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Tìm
+    </button>
+  </form>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Mã phiếu</th>
+        <th>Người tạo</th>
+        <th>Số SP</th>
+        <th>Ngày tạo</th>
+        <th>Trạng thái</th>
+        <th>Người duyệt</th>
+        <th style="text-align:right">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in receipts %}
+      <tr>
+        <td class="bold">{{ r.receipt_code }}</td>
+        <td>{{ r.created_by.full_name|default:r.created_by.username }}</td>
+        <td>{{ r.total_items }} sản phẩm</td>
+        <td>{{ r.created_at|date:"d/m/Y H:i" }}</td>
+        <td><span class="status-badge {{ r.status }}">{{ r.get_status_display }}</span></td>
+        <td>{% if r.reviewed_by %}{{ r.reviewed_by.full_name|default:r.reviewed_by.username }}{% else %}—{% endif %}</td>
+        <td style="text-align:right">
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button class="action-btn" title="Xem chi tiết" onclick="viewReceipt('{{ r.id }}')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            {% if user_role == 'KE_TOAN' or user_role == 'ADMIN' %}
+              {% if r.status == 'PENDING' %}
+              <button class="action-btn" title="Duyệt" onclick="openApproveModal('{{ r.id }}','{{ r.receipt_code }}')" style="color:var(--success)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+              <button class="action-btn" title="Từ chối" onclick="openRejectModal('{{ r.id }}','{{ r.receipt_code }}')" style="color:var(--danger)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              {% endif %}
+            {% endif %}
+            {% if user_role == 'KHO' or user_role == 'ADMIN' %}
+              {% if r.status == 'REJECTED' %}
+              <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;color:var(--warning);border-color:rgba(245,158,11,.3);"
+                onclick="openResubmitModal('{{ r.id }}','{{ r.receipt_code }}','{{ r.rejection_note|escapejs }}','{{ r.note|escapejs }}')">
+                ✏ Sửa & gửi lại
+              </button>
+              {% endif %}
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">Chưa có phiếu nhập kho nào.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if paginator.num_pages > 1 %}
+  <div class="pagination-wrap">
+    <span style="font-size:12px;color:var(--muted);">
+      Trang {{ page_obj.number }} / {{ paginator.num_pages }} — {{ paginator.count }} phiếu
+    </span>
+    <div class="pagination">
+      {# Nút trước #}
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="pg-btn">‹</a>
+      {% else %}
+      <span class="pg-btn disabled">‹</span>
+      {% endif %}
+
+      {# Trang 1 #}
+      {% if page_obj.number != 1 %}
+      <a href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="pg-btn">1</a>
+      {% else %}
+      <span class="pg-btn active">1</span>
+      {% endif %}
+
+      {# Dấu ... trái #}
+      {% if page_obj.number|add:"-1" > 2 %}
+      <span style="margin:0 4px;color:var(--muted);display:flex;align-items:flex-end;height:28px;">...</span>
+      {% endif %}
+
+      {# Trang ±1 xung quanh trang hiện tại, bỏ trang 1 và trang cuối #}
+      {% for num in paginator.page_range %}
+        {% if num > 1 and num < paginator.num_pages and num >= page_obj.number|add:"-1" and num <= page_obj.number|add:"1" %}
+          {% if num == page_obj.number %}
+          <span class="pg-btn active">{{ num }}</span>
+          {% else %}
+          <a href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="pg-btn">{{ num }}</a>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+
+      {# Dấu ... phải #}
+      {% if page_obj.number|add:"1" < paginator.num_pages|add:"-1" %}
+      <span style="margin:0 4px;color:var(--muted);display:flex;align-items:flex-end;height:28px;">...</span>
+      {% endif %}
+
+      {# Trang cuối #}
+      {% if paginator.num_pages > 1 %}
+        {% if page_obj.number != paginator.num_pages %}
+        <a href="?page={{ paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="pg-btn">{{ paginator.num_pages }}</a>
+        {% else %}
+        <span class="pg-btn active">{{ paginator.num_pages }}</span>
+        {% endif %}
+      {% endif %}
+
+      {# Nút sau #}
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" class="pg-btn">›</a>
+      {% else %}
+      <span class="pg-btn disabled">›</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<div class="toast-container" id="toast-container">
+  {% if messages %}{% for message in messages %}
+  <div class="toast show {{ message.tags }}"><span>{{ message }}</span></div>
+  {% endfor %}{% endif %}
+</div>
+
+<!-- Modal: Import Excel -->
+<div class="modal-backdrop" id="modal-import-excel">
+  <form class="modal modal-sm" method="POST" action="{% url 'warehouse:import_excel_upload' %}" enctype="multipart/form-data" id="import-excel-form">
+    {% csrf_token %}
+    <div class="modal-header">
+      <span class="modal-title">Import phiếu nhập từ Excel</span>
+      <button type="button" class="modal-close" onclick="closeModal('modal-import-excel')">✕</button>
+    </div>
+    <div class="field">
+      <label class="field-label">Chọn file Excel</label>
+      <input type="file" name="excel_file" accept=".xlsx,.xlsm" required>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px;">Hỗ trợ file .xlsx hoặc .xlsm theo đúng mẫu import.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modal-import-excel')">Hủy</button>
+      <button type="submit" class="btn btn-primary">Import Excel</button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal: T&#7841;o phi&#7871;u nh&#7853;p -->
+<div class="modal-backdrop" id="modal-create">
+  <form class="modal" method="POST" action="{% url 'warehouse:import_list' %}" id="create-form">
+    {% csrf_token %}
+    <div class="modal-header">
+      <span class="modal-title">T&#7841;o phi&#7871;u nh&#7853;p kho mới</span>
+      <button type="button" class="modal-close" onclick="closeModal('modal-create')">✕</button>
+    </div>
+    <div class="field">
+      <label class="field-label">Ghi chú phiếu</label>
+      <textarea name="note" placeholder="Nhập ghi chú (tùy chọn)..."></textarea>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Danh sách sản phẩm</span>
+        <button type="button" class="btn btn-ghost" style="padding:5px 12px;font-size:12px;" onclick="addItemRow()">+ Thêm dòng</button>
+      </div>
+      <table class="items-table" id="items-table">
+        <thead><tr>
+          <th style="width:35%">Sản phẩm</th>
+          <th style="width:16%">Số lượng</th>
+          <th style="width:11%">Đơn vị</th>
+          <th style="width:22%">Đơn giá nhập <span style="font-weight:400;color:var(--muted)">(tự điền)</span></th>
+          <th style="width:8%"></th>
+        </tr></thead>
+        <tbody id="items-body"></tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modal-create')">Hủy</button>
+      <button type="submit" class="btn btn-primary">Tạo & gửi duyệt</button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal: Duyệt phiếu -->
+<div class="modal-backdrop" id="modal-approve">
+  <form class="modal modal-sm" method="POST" id="approve-form">
+    {% csrf_token %}
+    <div class="modal-header">
+      <span class="modal-title">Xác nhận duyệt phiếu</span>
+      <button type="button" class="modal-close" onclick="closeModal('modal-approve')">✕</button>
+    </div>
+    <p style="font-size:14px;color:var(--muted2);margin-bottom:20px;">
+      Duyệt phiếu <strong id="approve-code" style="color:var(--text)"></strong>?
+      Tồn kho sẽ được cập nhật ngay lập tức.
+    </p>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modal-approve')">Hủy</button>
+      <button type="submit" class="btn btn-primary" style="background:var(--success);color:#fff;">✓ Duyệt</button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal: Từ chối phiếu -->
+<div class="modal-backdrop" id="modal-reject">
+  <form class="modal modal-sm" method="POST" id="reject-form">
+    {% csrf_token %}
+    <div class="modal-header">
+      <span class="modal-title">Từ chối phiếu nhập</span>
+      <button type="button" class="modal-close" onclick="closeModal('modal-reject')">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted2);margin-bottom:16px;">Phiếu <strong id="reject-code" style="color:var(--text)"></strong></p>
+    <div class="field">
+      <label class="field-label">Lý do từ chối <span style="color:var(--danger)">*</span></label>
+      <textarea name="rejection_note" placeholder="Ghi rõ lý do để thủ kho biết cách sửa lại..." required></textarea>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modal-reject')">Hủy</button>
+      <button type="submit" class="btn btn-danger">✕ Từ chối</button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal: Xem chi tiết -->
+<div class="modal-backdrop" id="modal-view">
+  <div class="modal" id="modal-view-content">
+    <div class="modal-header">
+      <span class="modal-title" id="view-title">Chi tiết phiếu</span>
+      <button type="button" class="modal-close" onclick="closeModal('modal-view')">✕</button>
+    </div>
+    <div id="view-body"></div>
+  </div>
+</div>
+
+<!-- Modal: Sửa & gửi lại -->
+<div class="modal-backdrop" id="modal-resubmit">
+  <form class="modal" method="POST" id="resubmit-form">
+    {% csrf_token %}
+    <div class="modal-header">
+      <span class="modal-title">✏ Sửa & gửi lại phiếu</span>
+      <button type="button" class="modal-close" onclick="closeModal('modal-resubmit')">✕</button>
+    </div>
+    <div class="rejection-box">
+      <div class="rejection-label">⚠ Lý do bị từ chối:</div>
+      <div id="resubmit-rejection-note" style="margin-top:4px;"></div>
+    </div>
+    <div class="field">
+      <label class="field-label">Ghi chú phiếu</label>
+      <textarea name="note" id="resubmit-note" placeholder="Ghi chú sau khi sửa..."></textarea>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">
+          Danh sách sản phẩm
+          <span style="color:var(--warning);font-size:10px;margin-left:6px;">(đã điền sẵn từ phiếu cũ — chỉnh sửa nếu cần)</span>
+        </span>
+        <button type="button" class="btn btn-ghost" style="padding:5px 12px;font-size:12px;" onclick="addResubmitRow()">+ Thêm dòng</button>
+      </div>
+      <table class="items-table">
+        <thead><tr>
+          <th style="width:35%">Sản phẩm</th><th style="width:16%">Số lượng</th>
+          <th style="width:11%">Đơn vị</th><th style="width:22%">Đơn giá nhập</th><th style="width:8%"></th>
+        </tr></thead>
+        <tbody id="resubmit-items-body"></tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modal-resubmit')">Hủy</button>
+      <button type="submit" class="btn btn-primary">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg>
+        Gửi lại duyệt
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+const PRODUCTS = {{ products_json|safe }};
+const PRODUCT_MAP = {};
+PRODUCTS.forEach(p => { PRODUCT_MAP[p.id] = p; });
+
+let itemCount = 0;
+let resubmitCount = 0;
+
+const urlData = document.getElementById('url-data');
+const APPROVE_URL_TPL  = urlData.dataset.approveUrl;
+const REJECT_URL_TPL   = urlData.dataset.rejectUrl;
+const RESUBMIT_URL_TPL = urlData.dataset.resubmitUrl;
+const FAKE_UUID = '00000000-0000-0000-0000-000000000000';
+
+function makeUrl(tpl, id) { return tpl.replace(FAKE_UUID, id); }
+
+const RECEIPTS = [
+  {% for r in receipts %}
+  {
+    id: '{{ r.id }}',
+    code: '{{ r.receipt_code }}',
+    status: '{{ r.status }}',
+    statusLabel: '{{ r.get_status_display }}',
+    createdBy: '{% if r.created_by %}{{ r.created_by.full_name|default:r.created_by.username|escapejs }}{% endif %}',
+    createdAt: '{{ r.created_at|date:"d/m/Y H:i" }}',
+    note: '{{ r.note|default:""|escapejs }}',
+    rejectionNote: '{{ r.rejection_note|default:""|escapejs }}',
+    reviewedBy: '{% if r.reviewed_by %}{{ r.reviewed_by.full_name|default:r.reviewed_by.username|escapejs }}{% endif %}',
+    reviewedAt: '{% if r.reviewed_at %}{{ r.reviewed_at|date:"d/m/Y H:i" }}{% endif %}',
+    items: [
+      {% for item in r.items.all %}
+      {
+        productId: '{{ item.product.id }}',
+        product: '{{ item.product.name|escapejs }}',
+        unit: '{{ item.product.base_unit|escapejs }}',
+        qty: '{{ item.quantity }}',
+        price: '{{ item.unit_price }}',
+        note: '{{ item.note|default:""|escapejs }}'
+      },
+      {% endfor %}
+    ],
+  },
+  {% endfor %}
+];
+
+function buildProductOptions(selectedId='') {
+  return `<option value="">-- Chọn sản phẩm --</option>` +
+    PRODUCTS.map(p =>
+      `<option value="${p.id}" data-unit="${p.base_unit}" data-price="${p.base_price}"
+        ${p.id===selectedId?'selected':''}>${p.name} (${p.category})</option>`
+    ).join('');
+}
+
+function onProductSelect(sel, prefix, i) {
+  const opt = sel.options[sel.selectedIndex];
+  const unitSpan = document.getElementById(`${prefix}-unit-${i}`);
+  const priceInput = document.getElementById(`${prefix}-price-${i}`);
+  const priceHint = document.getElementById(`${prefix}-price-hint-${i}`);
+  if (unitSpan) unitSpan.textContent = opt.dataset.unit || '—';
+  if (priceInput && opt.dataset.price) {
+    const basePrice = parseFloat(opt.dataset.price) || 0;
+    priceInput.value = basePrice;
+    if (priceHint) priceHint.textContent = basePrice > 0 ? `Giá bán: ${basePrice.toLocaleString('vi-VN')}đ` : '';
+  }
+}
+
+function buildItemRow(prefix, i, productId='', qty='', price='', unit='') {
+  return `<tr id="${prefix}-row-${i}">
+    <td><select name="product_id_${i}" onchange="onProductSelect(this,'${prefix}',${i})">${buildProductOptions(productId)}</select></td>
+    <td><input type="number" name="quantity_${i}" value="${qty}" min="0.01" step="0.01" placeholder="0"></td>
+    <td><span id="${prefix}-unit-${i}" style="font-size:13px;color:var(--muted2);">${unit || '—'}</span></td>
+    <td>
+      <input type="number" name="unit_price_${i}" id="${prefix}-price-${i}" value="${price}" min="0" step="1" placeholder="0">
+      <div class="price-hint" id="${prefix}-price-hint-${i}"></div>
+    </td>
+    <td>
+      <button type="button" class="btn-icon" onclick="this.closest('tr').remove()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+        </svg>
+      </button>
+    </td>
+  </tr>`;
+}
+
+function addItemRow() {
+  document.getElementById('items-body').insertAdjacentHTML('beforeend', buildItemRow('create', itemCount));
+  itemCount++;
+}
+
+function addResubmitRow(productId='', qty='', price='', unit='') {
+  document.getElementById('resubmit-items-body').insertAdjacentHTML('beforeend',
+    buildItemRow('resubmit', resubmitCount, productId, qty, price, unit));
+  resubmitCount++;
+}
+
+function openImportExcelModal() {
+  document.getElementById('import-excel-form').reset();
+  document.getElementById('modal-import-excel').classList.add('open');
+}
+
+function openCreateModal() {
+  document.getElementById('items-body').innerHTML = '';
+  itemCount = 0;
+  addItemRow();
+  document.getElementById('modal-create').classList.add('open');
+}
+
+function openApproveModal(id, code) {
+  document.getElementById('approve-code').textContent = code;
+  document.getElementById('approve-form').action = makeUrl(APPROVE_URL_TPL, id);
+  document.getElementById('modal-approve').classList.add('open');
+}
+
+function openRejectModal(id, code) {
+  document.getElementById('reject-code').textContent = code;
+  document.getElementById('reject-form').action = makeUrl(REJECT_URL_TPL, id);
+  document.getElementById('modal-reject').classList.add('open');
+}
+
+function openResubmitModal(id, code, rejectionNote, oldNote) {
+  const receipt = RECEIPTS.find(r => r.id === id);
+  document.getElementById('resubmit-rejection-note').textContent = rejectionNote || '(Không có ghi chú)';
+  document.getElementById('resubmit-note').value = oldNote || '';
+  document.getElementById('resubmit-form').action = makeUrl(RESUBMIT_URL_TPL, id);
+  document.getElementById('resubmit-items-body').innerHTML = '';
+  resubmitCount = 0;
+  if (receipt && receipt.items.length > 0) {
+    receipt.items.forEach(item => { addResubmitRow(item.productId, item.qty, item.price, item.unit); });
+  } else {
+    addResubmitRow();
+  }
+  document.getElementById('modal-resubmit').classList.add('open');
+}
+
+function viewReceipt(id) {
+  const r = RECEIPTS.find(x => x.id === id);
+  if (!r) return;
+  const statusColors = { PENDING: 'var(--warning)', APPROVED: 'var(--success)', REJECTED: 'var(--danger)' };
+  const statusLabels = { PENDING: 'Chờ duyệt', APPROVED: 'Đã duyệt', REJECTED: 'Từ chối' };
+  let rejBlock = r.status === 'REJECTED' && r.rejectionNote
+    ? `<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--danger);font-weight:600;margin-bottom:4px;">Lý do từ chối:</div>
+        <div style="font-size:13px;color:#fca5a5;">${r.rejectionNote}</div>
+      </div>` : '';
+  let itemsHtml = r.items.map(item => `<tr>
+    <td>${item.product}</td><td>${item.qty}</td><td>${item.unit}</td>
+    <td>${item.price ? Number(item.price).toLocaleString('vi-VN')+'đ' : '—'}</td>
+    <td style="color:var(--muted)">${item.note||''}</td>
+  </tr>`).join('');
+  document.getElementById('view-title').textContent = `Phiếu ${r.code}`;
+  document.getElementById('view-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div><span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Trạng thái</span>
+        <div style="margin-top:4px;"><span style="color:${statusColors[r.status]};font-weight:700;">${statusLabels[r.status]}</span></div></div>
+      <div><span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Người tạo</span>
+        <div style="margin-top:4px;color:var(--text);font-size:13px;">${r.createdBy}</div></div>
+      <div><span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Ngày tạo</span>
+        <div style="margin-top:4px;color:var(--text);font-size:13px;">${r.createdAt}</div></div>
+      ${r.reviewedBy ? `<div><span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Người duyệt</span>
+        <div style="margin-top:4px;color:var(--text);font-size:13px;">${r.reviewedBy} — ${r.reviewedAt}</div></div>` : ''}
+    </div>
+    ${r.note ? `<div style="margin-bottom:14px;font-size:13px;color:var(--muted2);">📝 ${r.note}</div>` : ''}
+    ${rejBlock}
+    <table class="items-table">
+      <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Đơn vị</th><th>Đơn giá nhập</th><th>Ghi chú</th></tr></thead>
+      <tbody>${itemsHtml || '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Không có sản phẩm</td></tr>'}</tbody>
+    </table>`;
+  document.getElementById('modal-view').classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+setTimeout(() => {
+  document.querySelectorAll('.toast').forEach(t => { t.classList.remove('show'); setTimeout(()=>t.remove(),300); });
+}, 4000);
+</script>
+{% endblock %}
+
+
+

@@ -1,0 +1,51 @@
+BAO CAO CACH DA TEST AUTH
+Du an: TeLiet_Quanlykho
+Ngay test: 02/04/2026
+
+1) Muc tieu test
+- Xac nhan cac chuc nang AUTH trong README hoat dong dung.
+- Django test runner tu tao va quan ly test DB.
+
+2) Pham vi da test
+- Service layer AUTH:
+  apps.authentication.test_services
+
+- API + CORS AUTH:
+  apps.authentication.test_api_views
+
+3) Cach test da ap dung
+- Chay bang Django test runner (khong dung file .bat).
+- Su dung settings rieng cho test:
+  core.settings_test
+
+- Ly do dung core.settings_test:
+  + Test DB dung SQLite de on dinh va tranh phu thuoc MySQL runtime.
+  + Van dung dung co che cua Django test: tao DB test, migrate, chay test.
+
+4) Lenh da chay
+- Lenh chinh:
+  python manage.py test apps.authentication.test_services apps.authentication.test_api_views --settings=core.settings_test --keepdb
+
+- Lenh thay the (khong can activate venv):
+  d:/Django/.venv/Scripts/python.exe manage.py test apps.authentication.test_services apps.authentication.test_api_views --settings=core.settings_test --keepdb
+
+5) Ket qua
+- So test tim thay: 22
+- Ket qua: OK
+- Tong ket: 22/22 test pass
+
+6) Noi dung duoc xac nhan
+- Dang nhap JWT thanh cong/that bai
+- Lay profile voi va khong co token
+- Doi mat khau (dung va sai old_password)
+- Refresh token
+- Logout va blacklist refresh token
+- Kiem tra CORS preflight cho origin hop le/khong hop le
+
+7) Ghi chu canh bao
+- Co warning InsecureKeyLengthWarning do JWT_SECRET_KEY hien tai ngan hon khuyen nghi cho SHA256.
+- Day la warning cau hinh bao mat, khong lam test fail.
+
+8) Ket luan
+- Bo test AUTH theo cach 1 da dat yeu cau.
+- Hien trang test: Dat chi tieu chuc nang va co the dung lam can cu nghiem thu sprint.

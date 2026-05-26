@@ -1,0 +1,64 @@
+Huong Dan Chay Test AUTH (khong can file .bat)
+Du an: TeLiet_Quanlykho
+Muc tieu: Chay test theo cach 1 (Django test runner tu tao test DB)
+
+1) Mo terminal dung thu muc goc
+- Ban phai dang o thu muc co file manage.py
+- Vi du:
+  PS D:\Django\TeLiet_Quanlykho>
+
+2) Kich hoat moi truong ao (neu chua kich hoat)
+- Neu ban da tao venv trong project:
+  .\venv\Scripts\Activate.ps1
+
+- Neu ban dung .venv ngoai project (nhu da chay truoc do):
+  D:\Django\.venv\Scripts\Activate.ps1
+
+3) Cai thu vien (chi can lam 1 lan)
+- pip install -r requirements.txt
+- pip install pytest pytest-django
+
+4) Lenh chay test AUTH khong can BAT
+
+4.1) Chay day du Service + API AUTH (khuyen nghi)
+python manage.py test apps.authentication.test_services apps.authentication.test_api_views --settings=core.settings_test --keepdb
+
+4.2) Chi chay API AUTH + CORS
+python manage.py test apps.authentication.test_api_views --settings=core.settings_test --keepdb
+
+4.3) Chi chay Service AUTH
+python manage.py test apps.authentication.test_services --settings=core.settings_test --keepdb
+
+4.4) Chay lai sach test DB (khong dung keepdb)
+python manage.py test apps.authentication.test_services apps.authentication.test_api_views --settings=core.settings_test
+
+5) Neu khong muon activate venv, chay truc tiep bang duong dan python
+- Vi du:
+  d:/Django/.venv/Scripts/python.exe manage.py test apps.authentication.test_services apps.authentication.test_api_views --settings=core.settings_test --keepdb
+
+6) Tai sao co --settings=core.settings_test?
+- Day la settings rieng cho test.
+- Database test duoc chuyen sang SQLite de tranh loi ket noi MySQL trong luc test.
+- Van la cach 1: Django test runner tu tao DB test, migrate, chay test, va quan ly vong doi test DB.
+
+7) Doc ket qua nhanh
+- Neu thanh cong, ban se thay:
+  Ran X tests in Ys
+  OK
+
+- Neu co loi, ban se thay:
+  FAILED (failures=...)
+  Hoac stack trace chi tiet.
+
+8) Loi thuong gap va cach xu ly
+- Loi: ModuleNotFoundError: No module named 'django'
+  Cach xu ly: Kich hoat venv va cai lai requirements.
+
+- Loi: Unknown server host 'db'
+  Cach xu ly: Dung them --settings=core.settings_test nhu lenh mau tren.
+
+- Hoi xoa test database cu
+  Cach xu ly: Goi yes la an toan (chi la test DB).
+
+9) Thoat moi truong ao khi xong
+- deactivate

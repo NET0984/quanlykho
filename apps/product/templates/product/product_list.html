@@ -1,0 +1,564 @@
+{% extends "base.html" %}
+
+{% block title %}Sản phẩm — TeLiet System{% endblock %}
+{% block breadcrumb %}Sản phẩm{% endblock %}
+{% block nav_products %}active{% endblock %}
+
+{% block extra_css %}
+.product-img { width: 40px; height: 40px; background: var(--surface3); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+.product-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+.product-info { display: flex; align-items: center; gap: 12px; }
+.badge.stock-ok { background: rgba(34,197,94,0.12); color: var(--success); }
+.badge.stock-low { background: rgba(245,158,11,0.12); color: var(--warning); }
+.badge.stock-out { background: rgba(239,68,68,0.12); color: var(--danger); }
+
+/* Modal */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.modal-backdrop.open { opacity: 1; pointer-events: all; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 560px; padding: 28px; transform: translateY(16px); transition: transform 0.2s; max-height: 90vh; overflow-y: auto; }
+.modal-backdrop.open .modal { transform: translateY(0); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.modal-title { font-family: Google Sans Flex, sans-serif; font-size: 18px; font-weight: 700; color: var(--text); }
+.modal-close { width: 30px; height: 30px; background: var(--surface2); border: 1px solid var(--border); border-radius:
+7px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted2); }
+.field { margin-bottom: 16px; }
+.field-label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase;
+letter-spacing: 1px; margin-bottom: 7px; }
+.field input, .field select, .field textarea { width: 100%; background: var(--surface2); border: 1px solid
+var(--border); border-radius: 8px; padding: 11px 14px; font-family: Google Sans Flex, sans-serif; font-size: 13px; color:
+var(--text); outline: none; transition: border-color 0.15s; }
+.field textarea { height: 80px; resize: none; }
+.field input::placeholder, .field textarea::placeholder { color: #3a3e47; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px
+rgba(232,164,39,0.08); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+/* ===== UPLOAD ZONE ===== */
+.upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: var(--surface2);
+}
+.upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(232,164,39,0.06);
+}
+.upload-zone.drag-over { transform: scale(1.01); }
+.upload-zone input[type="file"] {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer;
+}
+.upload-icon { color: var(--muted); margin-bottom: 8px; }
+.upload-text { font-size: 13px; color: var(--muted2); }
+.upload-text strong { color: var(--accent); }
+.upload-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ===== PREVIEW ẢNH ===== */
+.preview-wrap {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: var(--surface3);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+.preview-wrap.show { display: flex; }
+.preview-img {
+    width: 52px; height: 52px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+.preview-info { flex: 1; min-width: 0; }
+.preview-name { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.preview-size { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.preview-remove { background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; border-radius: 4px; transition: color 0.15s; }
+.preview-remove:hover { color: var(--danger); }
+
+/* ===== TIẾN TRÌNH ===== */
+.progress-wrap { display: none; margin-top: 10px; }
+.progress-wrap.show { display: block; }
+.progress-bar-bg { background: var(--surface3); border-radius: 4px; height: 4px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.2s; width: 0%; }
+.progress-text { font-size: 11px; color: var(--muted); margin-top: 4px; text-align: right; }
+
+/* ===== ẢNH HIỆN TẠI (khi edit) ===== */
+.current-img-wrap { display: none; margin-bottom: 12px; }
+.current-img-wrap.show { display: flex; align-items: center; gap: 10px; }
+.current-img { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; }
+.current-img-label { font-size: 12px; color: var(--muted); }
+
+/* Confirm modal */
+.confirm-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+.confirm-icon.warn { background: rgba(239,68,68,0.1); color: var(--danger); }
+.confirm-title { font-family: Google Sans Flex, sans-serif; font-size: 17px; font-weight: 700; text-align: center; margin-bottom:
+8px; }
+.confirm-desc { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.6; }
+
+/* Toast */
+.toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 200; display: flex; flex-direction: column; gap: 10px; }
+.toast { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); transform: translateX(80px); opacity: 0; transition: all 0.3s; min-width: 260px; }
+.toast.show { transform: translateX(0); opacity: 1; }
+.toast.success { border-left: 3px solid var(--success); }
+.toast.danger { border-left: 3px solid var(--danger); }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Danh mục vật liệu</h1>
+        <p class="page-sub">Quản lý thông tin sản phẩm, giá bán và tồn kho</p>
+    </div>
+    {% if perms.product.add_product %}
+    <button class="btn btn-primary" onclick="openModal('create')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Thêm vật liệu mới
+    </button>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Danh sách vật liệu</span>
+        <div class="search-wrap">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="search-input" placeholder="Tìm kiếm vật liệu...">
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Vật liệu</th><th>Danh mục</th><th>Đơn vị</th>
+                <th>Giá bán</th><th>Tồn kho</th><th>Trạng thái</th>
+                <th style="text-align:right">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody id="product-list"></tbody>
+    </table>
+    <div id="pagination-buttons"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Modal xác nhận xóa -->
+<div class="modal-backdrop" id="modal-confirm">
+    <form class="modal" id="delete-form" method="POST" style="max-width:400px;text-align:center;">
+        {% csrf_token %}
+        <div class="confirm-icon warn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></div>
+        <div class="confirm-title" id="confirm-title">Xác nhận xóa sản phẩm</div>
+        <p class="confirm-desc" id="confirm-desc">Sản phẩm này sẽ bị xóa vĩnh viễn.</p>
+        <div class="modal-footer" style="justify-content:center;">
+            <button type="button" class="btn btn-ghost" onclick="closeConfirm()">Hủy</button>
+            <button type="submit" class="btn btn-danger">Xóa sản phẩm</button>
+        </div>
+    </form>
+</div>
+
+<!-- Toast thông báo Django -->
+<div class="toast-container" id="toast-container">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="toast show {% if message.tags == 'error' %}danger{% else %}success{% endif %}">
+                {% if message.tags == 'error' %}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {% else %}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                {% endif %}
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<!-- Modal thêm/sửa sản phẩm -->
+<div class="modal-backdrop" id="modal-form">
+    <!-- enctype="multipart/form-data" - BẮT BUỘC để gửi file -->
+    <form class="modal" id="product-form" method="POST"
+          action="{% url 'product:product_create' %}"
+          enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-header">
+            <span class="modal-title" id="modal-title">Thêm vật liệu mới</span>
+            <button type="button" class="modal-close" onclick="closeModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+
+        <!-- Thông tin cơ bản -->
+        <div class="field">
+            <label class="field-label">Tên vật liệu *</label>
+            <input type="text" id="f-name" name="name" required placeholder="VD: Xi măng Hà Tiên PCB40">
+        </div>
+        <div class="form-row">
+            <div class="field">
+                <label class="field-label">Danh mục *</label>
+                <select id="f-category" name="category" required>
+                    <option value="">Chọn danh mục</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label class="field-label">Đơn vị cơ sở *</label>
+                <input type="text" id="f-unit" name="base_unit" required placeholder="Bao, Cây, Khối...">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="field">
+                <label class="field-label">Giá bán (VNĐ) *</label>
+                <input type="number" id="f-price" name="base_price" required placeholder="0" min="0">
+            </div>
+            <div class="field">
+                <label class="field-label">Tồn tối thiểu</label>
+                <input type="number" id="f-min-stock" placeholder="10" min="0">
+            </div>
+        </div>
+
+        <!-- ===== KHU VỰC UPLOAD ẢNH ===== -->
+        <div class="field">
+            <label class="field-label">Ảnh sản phẩm</label>
+
+            <!-- Hiển thị ảnh hiện tại khi edit -->
+            <div class="current-img-wrap" id="current-img-wrap">
+                <img src="" alt="Ảnh hiện tại" class="current-img" id="current-img">
+                <span class="current-img-label">Ảnh hiện tại — upload ảnh mới để thay thế</span>
+            </div>
+
+            <!-- Vùng kéo thả / click để chọn file -->
+            <div class="upload-zone"
+                 id="upload-zone"
+                 ondragover="xuLyKeoVao(event)"
+                 ondragleave="xuLyKeoRa(event)"
+                 ondrop="xuLyThaFile(event)">
+
+                <!-- Input file ẩn — name="anh_san_pham" phải khớp với views.py -->
+                <input type="file"
+                       id="id_anh_san_pham"
+                       name="anh_san_pham"
+                       accept="image/jpeg,image/png,image/webp"
+                       onchange="xuLyChonFile(event)">
+
+                <div id="upload-placeholder">
+                    <div class="upload-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                    </div>
+                    <p class="upload-text">Kéo thả ảnh vào đây hoặc <strong>click để chọn</strong></p>
+                    <p class="upload-hint">JPG, PNG, WEBP — tối đa 5MB — tự động resize 800×800</p>
+                </div>
+            </div>
+
+            <!-- Xem trước ảnh đã chọn -->
+            <div class="preview-wrap" id="preview-wrap">
+                <img src="" alt="Xem trước" class="preview-img" id="preview-img">
+                <div class="preview-info">
+                    <div class="preview-name" id="preview-name"></div>
+                    <div class="preview-size" id="preview-size"></div>
+                </div>
+                <button type="button" class="preview-remove" onclick="xoaChonAnh()" title="Xóa ảnh đã chọn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+
+            <!-- Tiến trình upload (hiện khi submit) -->
+            <div class="progress-wrap" id="progress-wrap">
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progress-bar"></div>
+                </div>
+                <div class="progress-text" id="progress-text">Đang xử lý...</div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="closeModal()">Hủy</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit">Lưu thông tin</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // ============================================================
+    // DỮ LIỆU SẢN PHẨM TỪ DJANGO
+    // ============================================================
+    let products = [
+        {% for p in products %}
+        {
+            id: '{{ p.id }}',
+            name: '{{ p.name|escapejs }}',
+            categoryId: '{{ p.category_id|default_if_none:"" }}',
+            category: '{{ p.category.name|default:"Chưa phân loại"|escapejs }}',
+            unit: '{{ p.base_unit|escapejs }}',
+            price: {{ p.base_price|stringformat:"f"|default:"0" }},
+            imageUrl: '{{ p.image_url|default:""|escapejs }}',
+            stock: 0,
+            minStock: 10
+        },
+        {% endfor %}
+    ];
+
+    const itemsPerPage = 5;
+    let currentPage = 1;
+    let filteredProducts = products.slice();
+
+    const canChange = {% if perms.product.change_product %}true{% else %}false{% endif %};
+    const canDelete = {% if perms.product.delete_product %}true{% else %}false{% endif %};
+
+    // Fallback khi ảnh bị lỗi tải (404, broken link...)
+    function imgError(el) {
+        el.parentElement.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>';
+    }
+
+    // ============================================================
+    // RENDER BẢNG SẢN PHẨM
+    // ============================================================
+    function renderProducts() {
+        const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+        if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const start = (currentPage - 1) * itemsPerPage;
+        const pageProducts = filteredProducts.slice(start, start + itemsPerPage);
+
+        document.getElementById('product-list').innerHTML = pageProducts.map(p => {
+            const sc = p.stock === 0 ? 'stock-out' : p.stock <= p.minStock ? 'stock-low' : 'stock-ok';
+            const st = p.stock === 0 ? 'Hết hàng' : p.stock <= p.minStock ? 'Sắp hết' : 'Còn hàng';
+
+            // Hiển thị ảnh sản phẩm hoặc icon placeholder
+            const svgPlaceholder = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`;
+            const imgHtml = p.imageUrl
+                ? `<img src="${p.imageUrl}" alt="${p.name}" loading="lazy" onerror="imgError(this)">`
+                : svgPlaceholder;
+
+            return `<tr>
+                <td class="bold">
+                    <div class="product-info">
+                        <div class="product-img">${imgHtml}</div>
+                        ${p.name}
+                    </div>
+                </td>
+                <td>${p.category}</td>
+                <td>${p.unit}</td>
+                <td class="bold">${Number(p.price).toLocaleString('vi-VN')}đ</td>
+                <td class="bold">${p.stock}</td>
+                <td><span class="badge ${sc}">${st}</span></td>
+                <td style="text-align:right">
+                    <div style="display:flex;gap:8px;justify-content:flex-end;">
+                        ${canChange ? `<button class="action-btn" onclick="openModal('edit','${p.id}')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>` : ''}
+                        ${canDelete ? `<button class="action-btn" onclick="deleteProduct('${p.id}')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M9 6V4h6v2"/></svg>
+                        </button>` : ''}
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+
+        if (filteredProducts.length === 0) {
+            document.getElementById('product-list').innerHTML =
+                `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted);">Chưa có sản phẩm nào.</td></tr>`;
+        }
+
+        renderPaginationButtons();
+    }
+
+    function renderPaginationButtons() {
+        const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+        const paginationDiv = document.getElementById('pagination-buttons');
+        if (!paginationDiv || totalPages <= 1) { if(paginationDiv) paginationDiv.innerHTML = ''; return; }
+
+        let html = `<div style="display:flex;align-items:center;gap:16px;margin-top:24px;padding:0 8px 25px;">
+            <span style="font-size:12px;color:var(--muted);">Trang ${currentPage}/${totalPages} (${filteredProducts.length} sản phẩm)</span>
+            <div style="flex:1;"></div>`;
+        if (currentPage > 1) html += `<button class="btn btn-ghost" onclick="goToPage(${currentPage-1})" style="font-size:13px;">← Trước</button>`;
+        for (let i = 1; i <= totalPages; i++) {
+            if (Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
+                html += `<button class="btn ${i===currentPage?'btn-primary':'btn-ghost'}" onclick="goToPage(${i})" style="font-size:12px;min-width:36px;">${i}</button>`;
+            } else if (Math.abs(i - currentPage) === 3) {
+                html += `<span style="color:var(--muted);font-size:12px;">...</span>`;
+            }
+        }
+        if (currentPage < totalPages) html += `<button class="btn btn-ghost" onclick="goToPage(${currentPage+1})" style="font-size:13px;">Sau →</button>`;
+        html += '</div>';
+        paginationDiv.innerHTML = html;
+    }
+
+    function goToPage(page) { currentPage = page; renderProducts(); }
+
+    // ============================================================
+    // UPLOAD ẢNH - XEM TRƯỚC & KÉO THẢ
+    // ============================================================
+    let urlXemTruoc = null; // Lưu blob URL để revoke sau
+
+    function xuLyChonFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        hienThiXemTruoc(file);
+    }
+
+    function hienThiXemTruoc(file) {
+        // Kiểm tra phía client (kiểm tra lần 2, server kiểm tra chính thức)
+        if (!file.type.startsWith('image/')) {
+            alert('Vui lòng chọn file ảnh (JPG, PNG, WEBP).');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Kích thước file quá lớn. Tối đa 5MB.');
+            xoaChonAnh();
+            return;
+        }
+
+        // Revoke URL cũ để tránh memory leak
+        if (urlXemTruoc) URL.revokeObjectURL(urlXemTruoc);
+
+        // Tạo URL xem trước (blob URL tạm thời)
+        urlXemTruoc = URL.createObjectURL(file);
+
+        document.getElementById('preview-img').src = urlXemTruoc;
+        document.getElementById('preview-name').textContent = file.name;
+        document.getElementById('preview-size').textContent =
+            file.size > 1024 * 1024
+                ? `${(file.size / 1024 / 1024).toFixed(1)} MB`
+                : `${(file.size / 1024).toFixed(0)} KB`;
+
+        document.getElementById('preview-wrap').classList.add('show');
+        document.getElementById('upload-placeholder').style.opacity = '0.4';
+    }
+
+    function xoaChonAnh() {
+        if (urlXemTruoc) {
+            URL.revokeObjectURL(urlXemTruoc);
+            urlXemTruoc = null;
+        }
+        document.getElementById('id_anh_san_pham').value = '';
+        document.getElementById('preview-wrap').classList.remove('show');
+        document.getElementById('preview-img').src = '';
+        document.getElementById('upload-placeholder').style.opacity = '1';
+    }
+
+    // Kéo thả
+    function xuLyKeoVao(e) {
+        e.preventDefault();
+        document.getElementById('upload-zone').classList.add('drag-over');
+    }
+    function xuLyKeoRa(e) {
+        e.preventDefault();
+        document.getElementById('upload-zone').classList.remove('drag-over');
+    }
+    function xuLyThaFile(e) {
+        e.preventDefault();
+        document.getElementById('upload-zone').classList.remove('drag-over');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            // Gán file vào input để form gửi được
+            const dt = new DataTransfer();
+            dt.items.add(files[0]);
+            document.getElementById('id_anh_san_pham').files = dt.files;
+            hienThiXemTruoc(files[0]);
+        }
+    }
+
+    // Hiển thị progress khi submit
+    document.getElementById('product-form').addEventListener('submit', function() {
+        const fileInput = document.getElementById('id_anh_san_pham');
+        if (fileInput.files.length > 0) {
+            document.getElementById('progress-wrap').classList.add('show');
+            // Simulate progress (Django xử lý sync)
+            let pct = 0;
+            const iv = setInterval(() => {
+                pct = Math.min(pct + 10, 90);
+                document.getElementById('progress-bar').style.width = pct + '%';
+                document.getElementById('progress-text').textContent = `Đang upload... ${pct}%`;
+                if (pct >= 90) clearInterval(iv);
+            }, 100);
+        }
+    });
+
+    // ============================================================
+    // MODAL MỞ / ĐÓNG
+    // ============================================================
+    function openModal(type, id) {
+        const form = document.getElementById('product-form');
+        const title = document.getElementById('modal-title');
+        const btnSubmit = document.getElementById('btn-submit');
+
+        xoaChonAnh(); // Reset upload zone
+        document.getElementById('progress-wrap').classList.remove('show');
+        document.getElementById('current-img-wrap').classList.remove('show');
+
+        if (type === 'create') {
+            title.textContent = 'Thêm vật liệu mới';
+            btnSubmit.textContent = 'Lưu thông tin';
+            form.reset();
+            form.action = "{% url 'product:product_create' %}";
+        } else {
+            const p = products.find(x => x.id === id);
+            title.textContent = 'Chỉnh sửa vật liệu';
+            btnSubmit.textContent = 'Cập nhật';
+
+            document.getElementById('f-name').value = p.name;
+            document.getElementById('f-category').value = p.categoryId;
+            document.getElementById('f-unit').value = p.unit;
+            document.getElementById('f-price').value = p.price;
+
+            // Hiển thị ảnh hiện tại nếu có
+            if (p.imageUrl) {
+                document.getElementById('current-img').src = p.imageUrl;
+                document.getElementById('current-img-wrap').classList.add('show');
+            }
+
+            let updateUrl = "{% url 'product:product_update' pk='00000000-0000-0000-0000-000000000000' %}";
+            form.action = updateUrl.replace('00000000-0000-0000-0000-000000000000', id);
+        }
+        document.getElementById('modal-form').classList.add('open');
+    }
+
+    function closeModal() {
+        document.getElementById('modal-form').classList.remove('open');
+        xoaChonAnh();
+    }
+
+    function deleteProduct(id) {
+        const p = products.find(x => x.id === id);
+        document.getElementById('confirm-desc').textContent =
+            `Sản phẩm "${p.name}" và ảnh của nó sẽ bị xóa vĩnh viễn khỏi hệ thống.`;
+        let deleteUrl = "{% url 'product:product_delete' pk='00000000-0000-0000-0000-000000000000' %}";
+        document.getElementById('delete-form').action =
+            deleteUrl.replace('00000000-0000-0000-0000-000000000000', id);
+        document.getElementById('modal-confirm').classList.add('open');
+    }
+
+    function closeConfirm() { document.getElementById('modal-confirm').classList.remove('open'); }
+
+    // Search
+    document.querySelector('.search-input').addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase();
+        filteredProducts = products.filter(p =>
+            p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
+        );
+        currentPage = 1;
+        renderProducts();
+    });
+
+    // Auto-hide toast
+    setTimeout(() => {
+        document.querySelectorAll('.toast').forEach(t => {
+            t.classList.remove('show');
+            setTimeout(() => t.remove(), 300);
+        });
+    }, 3500);
+
+    renderProducts();
+</script>
+{% endblock %}

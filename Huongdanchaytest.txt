@@ -1,0 +1,69 @@
+📖 Hướng Dẫn Cài Đặt Và Chạy Unit Test - Dự án TeLiet_Quanlykho
+Tài liệu này hướng dẫn từng bước chi tiết để thiết lập môi trường và chạy các bộ test cho Service Layer (Authentication & Product) trong dự án Django.
+
+📍 Bước 1: Mở Terminal tại đúng thư mục dự án
+Mở Terminal (hoặc PowerShell trong VSCode) và đảm bảo bạn đang đứng tại thư mục gốc của dự án, nơi có chứa file manage.py.
+Ví dụ đường dẫn đúng:
+
+PowerShell
+PS D:\QLDH\TeLiet_Quanlykho>
+(Lưu ý: Không dùng lệnh cd manage.py vì manage.py là một file, không phải thư mục).
+
+🟢 Bước 2: Tạo và kích hoạt môi trường ảo (Virtual Environment)
+Việc này giúp các thư viện của dự án được cài đặt độc lập, không ảnh hưởng đến máy tính của bạn.
+
+1. Tạo môi trường ảo:
+
+PowerShell
+python -m venv venv
+(Đợi vài giây để máy tính tạo thư mục venv)
+
+2. Kích hoạt môi trường ảo (Dành cho PowerShell):
+
+PowerShell
+.\venv\Scripts\Activate.ps1
+Thành công khi bạn thấy chữ (venv) xuất hiện ở đầu dòng lệnh.
+(Nếu bị lỗi đỏ từ chối quyền chạy script, hãy chạy lệnh Set-ExecutionPolicy Unrestricted -Scope CurrentUser, chọn Y, rồi chạy lại lệnh kích hoạt).
+
+📦 Bước 3: Cài đặt các thư viện cần thiết
+Đảm bảo bạn đã kích hoạt môi trường ảo. Chạy các lệnh sau để cài đặt các gói phụ thuộc:
+
+1. Cài đặt từ file requirements (nếu có):
+
+PowerShell
+pip install -r requirements.txt
+2. Cài đặt bổ sung công cụ Test (Bắt buộc):
+Do mã nguồn có sử dụng cú pháp của pytest, bạn cần cài thêm thư viện này để Django không báo lỗi ModuleNotFoundError:
+
+PowerShell
+pip install pytest pytest-django
+🚀 Bước 4: Chạy Unit Test
+Hãy chắc chắn rằng phần mềm quản lý CSDL (như MySQL/XAMPP) của bạn đang được bật.
+
+1. Chạy test cho Authentication Service (12 bài test):
+
+PowerShell
+python manage.py test apps.authentication.test_services
+2. Chạy test cho Product Service (20 bài test):
+
+PowerShell
+python manage.py test apps.product.test_services
+3. Chạy toàn bộ test trong dự án:
+
+PowerShell
+python manage.py test
+💡 Bước 5: Các mẹo và xử lý lỗi thường gặp
+1. Tăng tốc độ chạy test với --keepdb
+Mặc định, Django sẽ tạo một Database test mới và xóa nó đi sau khi chạy xong. Việc này tốn khá nhiều thời gian (khoảng gần 30 giây). Để giữ lại database này cho các lần test sau (giúp test chạy gần như ngay lập tức), hãy thêm cờ --keepdb:
+
+PowerShell
+python manage.py test apps.product.test_services --keepdb
+2. Xử lý câu hỏi: "Type 'yes' if you would like to try deleting the test database..."
+Lỗi này xuất hiện khi bạn chạy test bình thường (không có cờ --keepdb) nhưng hệ thống lại phát hiện một database test cũ vẫn đang tồn tại.
+Cách xử lý: Chỉ cần gõ yes và ấn Enter. Việc này an toàn 100%, Django chỉ đang xin phép xóa database ẢO cũ đi để tạo cái mới, hoàn toàn không ảnh hưởng đến dữ liệu thật của bạn.
+
+3. Thoát môi trường ảo khi làm việc xong
+Khi không làm việc với dự án nữa, bạn gõ lệnh sau để tắt môi trường ảo:
+
+PowerShell
+deactivate

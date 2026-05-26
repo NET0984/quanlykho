@@ -1,0 +1,165 @@
+# 📋 HƯỚNG DẪN TEST CHỨC NĂNG HỆ THỐNG QUẢN LÝ KHO
+
+---
+
+## 🔐 TÀI KHOẢN TEST
+
+| Role | Username | Password |
+|------|----------|----------|
+| Admin | admin | (mật khẩu hiện tại) |
+| Thủ kho | kho01 | Kho@123 |
+| Bán hàng | sale01 | Sale@123 |
+| Kế toán | ketoan01 | KeToan@123 |
+
+---
+
+## 📦 1. NHẬP KHO
+
+**Luồng:** KHO tạo → PENDING → KE_TOAN duyệt → APPROVED → Tồn kho tăng
+
+### Bước 1: KHO tạo phiếu nhập
+1. Đăng nhập **kho01**
+2. Vào **Nhập kho** (sidebar trái)
+3. Nhấn **"Tạo phiếu nhập"**
+4. Điền ghi chú: `Nhập hàng tháng 4`
+5. Chọn sản phẩm → số lượng điền vào (VD: 100) → giá tự điền theo giá bán
+6. Nhấn **"+ Thêm dòng"** nếu muốn thêm sản phẩm khác
+7. Nhấn **"Tạo & gửi duyệt"**
+8. ✅ Kết quả: Phiếu xuất hiện với trạng thái **⏳ Chờ duyệt**
+
+### Bước 2: KE_TOAN duyệt phiếu
+1. Đăng nhập **ketoan01**
+2. Vào **Nhập kho**
+3. Thấy phiếu vừa tạo → nhấn nút **✓ (duyệt màu xanh)**
+4. Xác nhận trong popup
+5. ✅ Kết quả: Phiếu chuyển **✅ Đã duyệt**, tồn kho tăng lên
+
+### Bước 3: KE_TOAN từ chối phiếu (test luồng từ chối)
+1. KHO tạo thêm 1 phiếu nhập mới
+2. KE_TOAN nhấn nút **✕ (từ chối màu đỏ)**
+3. Nhập lý do: `Số lượng không khớp với hóa đơn`
+4. ✅ Kết quả: Phiếu chuyển **❌ Từ chối**
+
+### Bước 4: KHO sửa và gửi lại
+1. Đăng nhập **kho01**
+2. Thấy phiếu bị từ chối → nhấn **"✏ Sửa & gửi lại"**
+3. Modal mở ra với lý do từ chối ở trên + sản phẩm cũ đã điền sẵn
+4. Sửa số lượng hoặc giá → nhấn **"Gửi lại duyệt"**
+5. ✅ Kết quả: Phiếu quay lại **⏳ Chờ duyệt**
+
+---
+
+## 🏪 2. TỒN KHO
+
+**Luồng:** Tồn kho cập nhật tự động khi nhập/xuất được duyệt
+
+### Kiểm tra tồn kho
+1. Đăng nhập bất kỳ tài khoản (trừ SALE)
+2. Vào **Tồn kho** (sidebar trái)
+3. Xem danh sách sản phẩm với số lượng hiện tại
+4. Sau khi duyệt phiếu nhập → quay lại kiểm tra số tăng
+5. Sau khi duyệt phiếu xuất → quay lại kiểm tra số giảm
+
+**Màu sắc trạng thái:**
+- 🟢 **Còn hàng**: số lượng > 10
+- 🟡 **Sắp hết**: số lượng ≤ 10
+- 🔴 **Hết hàng**: số lượng = 0
+
+---
+
+## 🛒 3. ĐƠN HÀNG
+
+**Luồng:** SALE tạo → CONFIRMED → chuyển WAITING → phiếu xuất tự động → duyệt → DONE
+
+### Bước 1: SALE tạo đơn hàng
+1. Đăng nhập **sale01**
+2. Vào **Đơn hàng** (sidebar trái)
+3. Nhấn **"Tạo đơn hàng"**
+4. Nhập thông tin:
+   - Tên khách: `Công ty ABC`
+   - SĐT: `0901234567`
+   - Ghi chú: `Giao sáng mai`
+5. Chọn sản phẩm → điền số lượng (**phải nhỏ hơn tồn kho**) → giá tự điền
+6. Nhấn **"Xác nhận đơn hàng"**
+7. ✅ Kết quả: Đơn tạo thành công, trạng thái **✅ Đã xác nhận**
+
+> ⚠️ **Lưu ý:** Nếu số lượng > tồn kho → hệ thống báo lỗi, đơn không được tạo
+
+### Bước 2: Chuyển sang Chờ lấy hàng (KHO/ADMIN)
+1. Đăng nhập **admin** hoặc **kho01**
+2. Vào **Đơn hàng** → tìm đơn vừa tạo
+3. Nhấn **"⏳ Chờ lấy hàng"** → popup xác nhận → nhấn **"Duyệt"**
+4. ✅ Kết quả:
+   - Đơn hàng → **⏳ Chờ lấy hàng**
+   - **Phiếu xuất kho được tạo tự động** (kiểm tra trong menu Xuất kho)
+
+### Bước 3: Hủy đơn hàng (test luồng hủy)
+1. Tạo thêm 1 đơn hàng mới (ở bước CONFIRMED)
+2. Nhấn **"✗ Hủy"** → xác nhận
+3. ✅ Kết quả: Đơn chuyển **❌ Đã hủy**
+
+---
+
+## 📤 4. XUẤT KHO
+
+**Luồng:** Phiếu xuất tự động từ đơn hàng → KE_TOAN/ADMIN duyệt → tồn kho giảm → đơn DONE
+
+> 💡 **Phiếu xuất KHÔNG tạo thủ công** — chỉ tạo tự động khi đơn hàng chuyển sang "Chờ lấy hàng"
+
+### Bước 1: Kiểm tra phiếu xuất tự động
+1. Sau khi đơn hàng chuyển sang **Chờ lấy hàng** (bước 2 phần Đơn hàng)
+2. Đăng nhập **ketoan01**
+3. Vào **Xuất kho** → thấy phiếu xuất mới với trạng thái **⏳ Chờ duyệt**
+4. Nhấn **👁 (xem chi tiết)** → kiểm tra sản phẩm đúng với đơn hàng
+
+### Bước 2: KE_TOAN duyệt phiếu xuất
+1. Nhấn nút **✓ (duyệt màu xanh)**
+2. Đọc cảnh báo → nhấn **"✓ Duyệt phiếu xuất"**
+3. ✅ Kết quả:
+   - Phiếu xuất → **✅ Đã duyệt**
+   - Tồn kho giảm theo số lượng xuất
+   - Đơn hàng liên quan → **🎉 Hoàn thành**
+
+### Bước 3: Từ chối phiếu xuất (test)
+1. Đơn hàng khác → chuyển sang Chờ lấy hàng → có phiếu xuất mới
+2. KE_TOAN nhấn **✕ (từ chối)** → nhập lý do
+3. ✅ Kết quả:
+   - Phiếu xuất → **❌ Từ chối**
+   - Tồn kho KHÔNG thay đổi
+   - Đơn hàng quay lại **✅ Đã xác nhận**
+
+---
+
+## 🔄 LUỒNG ĐẦY ĐỦ END-TO-END
+
+```
+KHO tạo phiếu nhập
+    ↓
+KE_TOAN duyệt phiếu nhập → Tồn kho TĂNG
+    ↓
+SALE tạo đơn hàng → Kiểm tra tồn kho đủ
+    ↓
+KHO/ADMIN chuyển đơn sang "Chờ lấy hàng"
+    ↓
+Phiếu xuất kho tạo TỰ ĐỘNG
+    ↓
+KE_TOAN duyệt phiếu xuất → Tồn kho GIẢM
+    ↓
+Đơn hàng → HOÀN THÀNH ✅
+```
+
+---
+
+## ⚠️ CÁC TRƯỜNG HỢP LỖI CẦN TEST
+
+| Tình huống | Kết quả mong đợi |
+|-----------|-----------------|
+| Tạo đơn với số lượng > tồn kho | ❌ Báo lỗi, không tạo được |
+| SALE cố cập nhật trạng thái đơn | ❌ Báo không có quyền |
+| Duyệt phiếu đã duyệt rồi | ❌ Báo chỉ duyệt phiếu chờ duyệt |
+| Từ chối không nhập lý do | ❌ Form không submit |
+| Tạo phiếu nhập không chọn sản phẩm | ❌ Báo chưa chọn sản phẩm |
+
+---
+
+*Tài liệu này dành cho team test nội bộ — TeLiet Quanlykho*

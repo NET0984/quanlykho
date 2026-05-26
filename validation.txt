@@ -1,0 +1,66 @@
+1. Xây dựng module Product
+Thiết kế và sử dụng các model:
+Product
+Category
+ProductUnit
+Thiết lập quan hệ dữ liệu giữa các bảng
+2. Xây dựng hệ thống Validator
+Tạo file validators.py
+Cài đặt các lớp:
+ProductValidator
+CategoryValidator
+ProductUnitValidator
+
+👉 Kiểm tra:
+
+Dữ liệu rỗng
+Độ dài chuỗi
+Định dạng số (Decimal)
+Giá trị hợp lệ (>= 0, > 0)
+Ký tự đặc biệt không hợp lệ
+3. Xây dựng validation nâng cao
+Kiểm tra trùng dữ liệu:
+Tên sản phẩm
+Tên danh mục
+Validate file upload:
+Giới hạn dung lượng (≤ 2MB)
+Định dạng ảnh (JPG, PNG)
+4. Viết Unit Test
+Tạo file test cho validator
+Bao gồm:
+Test dữ liệu hợp lệ
+Test dữ liệu rỗng
+Test sai định dạng
+Test giá trị biên (âm, 0, quá lớn)
+5. Xử lý lỗi hệ thống
+Fix lỗi database:
+Không có quyền tạo test database
+Cấu hình lại MySQL
+6. Chạy và kiểm thử hệ thống
+Khởi động MySQL
+Thực hiện migrate database
+Chạy test Django
+
+👉 Kết quả:
+
+29/29 test pass
+Hệ thống hoạt động ổn định
+7. Kết quả đạt được
+Hoàn thiện module validation cho Product
+Đảm bảo dữ liệu đầu vào chính xác
+Đạt 100% test case
+Sẵn sàng tích hợp API hoặc hệ thống lớn hơn
+🧪 HƯỚNG DẪN CHẠY TEST
+1. Khởi động MySQL
+net start MySQL80
+
+2. Chạy migrate (nếu cần)
+python manage.py migrate
+
+3. Chạy test validator
+python manage.py test apps.product.test_validators
+
+4. Kết quả mong muốn
+Found 29 test(s).
+Ran 29 tests in ...
+OK

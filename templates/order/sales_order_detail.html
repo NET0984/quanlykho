@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}{{ order.order_code }} - TeLiet System{% endblock %}
+{% block breadcrumb %}Chi tiết đơn hàng{% endblock %}
+{% block nav_orders %}active{% endblock %}
+
+{% block extra_css %}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;}
+.status-badge.CONFIRMED{background:rgba(59,130,246,.12);color:var(--info);}
+.status-badge.WAITING{background:rgba(245,158,11,.12);color:var(--warning);}
+.status-badge.PICKED{background:rgba(16,185,129,.12);color:#10b981;}
+.status-badge.DONE{background:rgba(34,197,94,.12);color:var(--success);}
+.status-badge.CANCELLED{background:rgba(239,68,68,.12);color:var(--danger);}
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+.info-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.info-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:6px;}
+.info-value{font-size:14px;color:var(--text);font-weight:500;}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ order.order_code }}</h1>
+    <p class="page-sub">Chi tiết đơn hàng - {{ order.customer_name }}</p>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <span class="status-badge {{ order.status }}">{{ order.get_status_display }}</span>
+    <a href="{% url 'order:sales_list' %}" class="btn btn-ghost">Quay lại</a>
+  </div>
+</div>
+
+<div class="info-grid">
+  <div class="info-box">
+    <div class="info-label">Khách hàng</div>
+    <div class="info-value">{{ order.customer_name }}</div>
+    {% if order.customer_phone %}<div style="font-size:12px;color:var(--muted2);margin-top:3px;">{{ order.customer_phone }}</div>{% endif %}
+  </div>
+  <div class="info-box">
+    <div class="info-label">Người tạo</div>
+    <div class="info-value">{{ order.created_by.full_name|default:order.created_by.username }}</div>
+    <div style="font-size:12px;color:var(--muted2);margin-top:3px;">{{ order.created_at|date:"d/m/Y H:i" }}</div>
+  </div>
+  <div class="info-box">
+    <div class="info-label">Tổng tiền</div>
+    <div class="info-value" style="color:var(--accent);font-size:18px;">{{ order.total_amount|floatformat:0 }}đ</div>
+  </div>
+</div>
+
+{% with receipt=order.export_receipts.first %}
+{% if receipt %}
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header"><span class="card-title">Thông tin lấy hàng</span></div>
+  <div style="padding:16px 20px;">
+    <div style="font-size:13px;color:var(--muted2);margin-bottom:8px;">Phiếu xuất: <a href="{% url 'warehouse:export_detail' receipt.id %}">{{ receipt.receipt_code }}</a></div>
+    <div style="font-size:13px;color:var(--muted2);margin-bottom:8px;">Trạng thái phiếu: {{ receipt.get_status_display }}</div>
+    {% if receipt.pickup_photo %}
+    <div style="margin-top:12px;">
+      <img src="{{ receipt.pickup_photo.url }}" alt="Ảnh lấy hàng" style="max-width:320px;border-radius:10px;border:1px solid var(--border);">
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endwith %}
+
+{% if order.note %}
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px;">
+  <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:6px;">Ghi chú</div>
+  <div style="font-size:13px;color:var(--muted2);">{{ order.note }}</div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header"><span class="card-title">Danh sách sản phẩm</span></div>
+  <table>
+    <thead>
+      <tr>
+        <th>Sản phẩm</th>
+        <th>Danh mục</th>
+        <th>Số lượng</th>
+        <th>Đơn vị</th>
+        <th style="text-align:right">Đơn giá</th>
+        <th style="text-align:right">Thành tiền</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in order.items.all %}
+      <tr>
+        <td class="bold">{{ item.product.name }}</td>
+        <td>{{ item.product.category.name|default:"-" }}</td>
+        <td>{{ item.quantity|floatformat:"-2" }}</td>
+        <td>{{ item.product.base_unit }}</td>
+        <td style="text-align:right">{{ item.unit_price|floatformat:0 }}đ</td>
+        <td style="text-align:right" class="bold">{{ item.subtotal|floatformat:0 }}đ</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted);">Không có sản phẩm.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

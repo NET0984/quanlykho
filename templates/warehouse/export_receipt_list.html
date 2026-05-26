@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}Xuất kho - TeLiet System{% endblock %}
+{% block breadcrumb %}Xuất kho{% endblock %}
+{% block nav_export %}active{% endblock %}
+
+{% block extra_css %}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600;}
+.status-badge.PREPARING{background:rgba(59,130,246,.12);color:var(--info);}
+.status-badge.PENDING{background:rgba(245,158,11,.12);color:var(--warning);}
+.status-badge.APPROVED{background:rgba(34,197,94,.12);color:var(--success);}
+.status-badge.REJECTED{background:rgba(239,68,68,.12);color:var(--danger);}
+.filter-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.filter-tab{padding:6px 16px;border-radius:7px;font-size:12px;font-weight:600;border:1px solid var(--border);background:var(--surface);color:var(--muted2);text-decoration:none;}
+.filter-tab.active,.filter-tab:hover{background:rgba(232,164,39,.12);border-color:rgba(232,164,39,.3);color:var(--accent);}
+.search-form{display:flex;gap:8px;align-items:center;margin-bottom:20px;}
+.search-form input{padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);width:280px;}
+.search-form button{padding:8px 14px;background:var(--accent);color:#0e0f11;border:none;border-radius:8px;font-weight:600;cursor:pointer;}
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center;}
+.stat-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.stat-value{font-size:28px;font-weight:700;color:var(--accent);}
+.toast-container{position:fixed;bottom:28px;right:28px;z-index:200;display:flex;flex-direction:column;gap:10px;}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;transform:translateX(80px);opacity:0;transition:all .3s;min-width:260px;}
+.toast.show{transform:translateX(0);opacity:1;}
+.toast.success{border-left:3px solid var(--success);}
+.toast.warning{border-left:3px solid var(--warning);}
+.toast.error,.toast.danger{border-left:3px solid var(--danger);}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-backdrop.open{opacity:1;pointer-events:auto;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:720px;padding:28px;max-height:90vh;overflow-y:auto;}
+.modal-sm{max-width:460px;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.modal-title{font-size:18px;font-weight:700;color:var(--text);}
+.modal-close{width:30px;height:30px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;color:var(--muted2);}
+.field{margin-bottom:16px;}
+.field-label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;}
+.field input,.field textarea,.field select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);}
+.field-help{font-size:12px;color:var(--muted2);margin-top:6px;}
+.items-table{width:100%;border-collapse:collapse;margin-bottom:12px;}
+.items-table th,.items-table td{padding:8px 10px;border-bottom:1px solid var(--border);}
+.items-table th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:var(--surface2);text-align:left;}
+.items-table td input,.items-table td select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);width:100%;}
+.price-display{background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--accent);font-weight:600;min-height:35px;display:flex;align-items:center;}
+.price-display.empty{color:var(--muted);font-weight:400;}
+.line-total{font-size:13px;font-weight:700;color:var(--text);}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+.action-stack{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;}
+.pickup-flag{font-size:12px;color:var(--warning);font-weight:600;}
+{% endblock %}
+
+{% block content %}
+<div id="url-data"
+  data-approve-url="{% url 'warehouse:export_approve' pk='00000000-0000-0000-0000-000000000000' %}"
+  data-reject-url="{% url 'warehouse:export_reject' pk='00000000-0000-0000-0000-000000000000' %}"
+  data-picked-url="{% url 'warehouse:export_mark_picked' pk='00000000-0000-0000-0000-000000000000' %}"
+  style="display:none"></div>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Phiếu xuất kho</h1>
+    <p class="page-sub">Thủ kho chụp ảnh sau khi lấy hàng, hệ thống trừ tồn ngay và chuyển sang chờ duyệt.</p>
+  </div>
+  <!-- {% if user_role == 'KHO' or user_role == 'ADMIN' %}
+  <button class="btn btn-primary" onclick="openCreateModal()">Tạo phiếu xuất</button>
+  {% endif %} -->
+</div>
+
+<div class="stats-bar">
+  <div class="stat-card"><div class="stat-label">Tổng phiếu</div><div class="stat-value">{{ stats.total_receipts|floatformat:0 }}</div></div>
+  <div class="stat-card"><div class="stat-label">Chờ lấy hàng</div><div class="stat-value">{{ stats.preparing_receipts|floatformat:0 }}</div></div>
+  <div class="stat-card"><div class="stat-label">Chờ duyệt</div><div class="stat-value">{{ stats.pending_receipts|floatformat:0 }}</div></div>
+  <div class="stat-card"><div class="stat-label">Tổng số SP</div><div class="stat-value">{{ stats.total_items|floatformat:0 }}</div></div>
+</div>
+
+<div class="filter-tabs">
+  <a href="?status={% if search_query %}&search={{ search_query }}{% endif %}" class="filter-tab {% if not status_filter %}active{% endif %}">Tất cả</a>
+  <a href="?status=PREPARING{% if search_query %}&search={{ search_query }}{% endif %}" class="filter-tab {% if status_filter == 'PREPARING' %}active{% endif %}">Chờ lấy hàng</a>
+  <a href="?status=PENDING{% if search_query %}&search={{ search_query }}{% endif %}" class="filter-tab {% if status_filter == 'PENDING' %}active{% endif %}">Chờ duyệt</a>
+  <a href="?status=APPROVED{% if search_query %}&search={{ search_query }}{% endif %}" class="filter-tab {% if status_filter == 'APPROVED' %}active{% endif %}">Đã duyệt</a>
+  <a href="?status=REJECTED{% if search_query %}&search={{ search_query }}{% endif %}" class="filter-tab {% if status_filter == 'REJECTED' %}active{% endif %}">Từ chối</a>
+</div>
+
+<form method="get" class="search-form">
+  {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+  <input type="text" name="search" placeholder="Tìm mã phiếu, ghi chú, mã đơn..." value="{{ search_query }}">
+  <button type="submit">Tìm</button>
+</form>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Mã phiếu</th>
+        <th>Đơn hàng</th>
+        <th>Người tạo</th>
+        <th>Ngày tạo</th>
+        <th>Trạng thái</th>
+        <th>Ảnh lấy hàng</th>
+        <th style="text-align:right">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in receipts %}
+      <tr>
+        <td class="bold">{{ r.receipt_code }}</td>
+        <td>{{ r.sales_order.order_code|default:"-" }}</td>
+        <td>{{ r.created_by.full_name|default:r.created_by.username }}</td>
+        <td>{{ r.created_at|date:"d/m/Y H:i" }}</td>
+        <td>
+          <span class="status-badge {{ r.status }}">{{ r.get_status_display }}</span>
+          {% if r.status == 'PREPARING' %}
+          <div class="pickup-flag">Cần tải ảnh và xác nhận đã lấy hàng</div>
+          {% endif %}
+        </td>
+        <td>{% if r.pickup_photo %}<a href="{{ r.pickup_photo.url }}" target="_blank">Xem ảnh</a>{% else %}-{% endif %}</td>
+        <td style="text-align:right">
+          <div class="action-stack">
+            <a class="action-btn" href="{% url 'warehouse:export_detail' r.id %}" title="Xem chi tiết" aria-label="Xem chi tiết phiếu {{ r.receipt_code }}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </a>
+            {% if user_role == 'KHO' or user_role == 'ADMIN' %}
+              {% if r.status == 'PREPARING' %}
+              <button class="action-btn" type="button" onclick="openPickedModal('{{ r.id }}', '{{ r.receipt_code }}')">Tải ảnh & xác nhận</button>
+              {% endif %}
+            {% endif %}
+            {% if user_role == 'KE_TOAN' or user_role == 'ADMIN' %}
+              {% if r.status == 'PENDING' %}
+              <button class="action-btn" type="button" onclick="openApproveModal('{{ r.id }}', '{{ r.receipt_code }}')">Duyệt</button>
+              <button class="action-btn" type="button" onclick="openRejectModal('{{ r.id }}', '{{ r.receipt_code }}')">Từ chối</button>
+              {% endif %}
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">Chưa có phiếu xuất kho nào.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<div class="toast-container" id="toast-container">
+  {% if messages %}{% for message in messages %}
+  <div class="toast show {{ message.tags }}"><span>{{ message }}</span></div>
+  {% endfor %}{% endif %}
+</div>
+
+<div class="modal-backdrop" id="modal-picked">
+  <form class="modal modal-sm" method="POST" id="picked-form" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="modal-header">
+      <span class="modal-title">Xác nhận đã lấy hàng</span>
+      <button type="button" class="modal-close" onclick="closeModal('modal-picked')">×</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted2);margin-bottom:16px;">Phiếu <strong id="picked-code"></strong></p>
+    <div class="field">
+      <label class="field-label">Ảnh chụp hàng đã lấy</label>
+      <input type="file" name="pickup_photo" accept="image/*">
+      <div class="field-help">Sau khi xác nhận, phiếu sẽ chuyển sang trạng thái chờ duyệt và tồn kho sẽ bị trừ.</div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modal-picked')">Hủy</button>
+      <button type="submit" class="btn btn-primary">Đã lấy hàng</button>
+    </div>
+  </form>
+</div>
+
+<div class="modal-backdrop" id="modal-approve">
+  <form class="modal modal-sm" method="POST" id="approve-form">
+    {% csrf_token %}
+    <div class="modal-header">
+      <span class="modal-title">Duyệt phiếu xuất</span>
+      <button type="button" class="modal-close" onclick="closeModal('modal-approve')">×</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted2);margin-bottom:16px;">Duyệt phiếu <strong id="approve-code"></strong></p>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modal-approve')">Hủy</button>
+      <button type="submit" class="btn btn-primary">Duyệt</button>
+    </div>
+  </form>
+</div>
+
+<div class="modal-backdrop" id="modal-reject">
+  <form class="modal modal-sm" method="POST" id="reject-form">
+    {% csrf_token %}
+    <div class="modal-header">
+      <span class="modal-title">Từ chối phiếu xuất</span>
+      <button type="button" class="modal-close" onclick="closeModal('modal-reject')">×</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted2);margin-bottom:16px;">Phiếu <strong id="reject-code"></strong></p>
+    <div class="field">
+      <label class="field-label">Lý do từ chối</label>
+      <textarea name="rejection_note" required></textarea>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modal-reject')">Hủy</button>
+      <button type="submit" class="btn btn-danger">Từ chối</button>
+    </div>
+  </form>
+</div>
+
+<div class="modal-backdrop" id="modal-create">
+  <form class="modal" method="POST" action="{% url 'warehouse:export_list' %}" id="create-form">
+    {% csrf_token %}
+    <div class="modal-header">
+      <span class="modal-title">Tạo phiếu xuất kho mới</span>
+      <button type="button" class="modal-close" onclick="closeModal('modal-create')">×</button>
+    </div>
+    <div class="field">
+      <label class="field-label">Lý do xuất kho</label>
+      <textarea name="note"></textarea>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span class="field-label" style="margin:0;">Danh sách sản phẩm</span>
+      <button type="button" class="btn btn-ghost" onclick="addItemRow()">Thêm dòng</button>
+    </div>
+    <table class="items-table">
+      <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Đơn vị</th><th>Đơn giá</th><th>Thành tiền</th><th></th></tr></thead>
+      <tbody id="items-body"></tbody>
+    </table>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('modal-create')">Hủy</button>
+      <button type="submit" class="btn btn-primary">Tạo phiếu chờ lấy hàng</button>
+    </div>
+  </form>
+</div>
+
+<script>
+const PRODUCTS = {{ products_json|safe }};
+let itemCount = 0;
+const urlData = document.getElementById('url-data');
+const APPROVE_URL_TPL = urlData.dataset.approveUrl;
+const REJECT_URL_TPL = urlData.dataset.rejectUrl;
+const PICKED_URL_TPL = urlData.dataset.pickedUrl;
+const FAKE_UUID = '00000000-0000-0000-0000-000000000000';
+function makeUrl(tpl, id) { return tpl.replace(FAKE_UUID, id); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openCreateModal() { document.getElementById('items-body').innerHTML = ''; itemCount = 0; addItemRow(); document.getElementById('modal-create').classList.add('open'); }
+function openApproveModal(id, code) { document.getElementById('approve-code').textContent = code; document.getElementById('approve-form').action = makeUrl(APPROVE_URL_TPL, id); document.getElementById('modal-approve').classList.add('open'); }
+function openRejectModal(id, code) { document.getElementById('reject-code').textContent = code; document.getElementById('reject-form').action = makeUrl(REJECT_URL_TPL, id); document.getElementById('modal-reject').classList.add('open'); }
+function openPickedModal(id, code) { document.getElementById('picked-code').textContent = code; document.getElementById('picked-form').action = makeUrl(PICKED_URL_TPL, id); document.getElementById('modal-picked').classList.add('open'); }
+function buildProductOpts(selectedId='') {
+  return `<option value="">-- Chọn sản phẩm --</option>` + PRODUCTS.map(p =>
+    `<option value="${p.id}" data-unit="${p.base_unit}" data-price="${p.base_price}" ${p.id===selectedId?'selected':''}>${p.name}</option>`
+  ).join('');
+}
+function formatCurrency(value) {
+  return (parseFloat(value) || 0).toLocaleString('vi-VN') + 'đ';
+}
+function updateUnit(selectEl, spanId) {
+  document.getElementById(spanId).textContent = selectEl.options[selectEl.selectedIndex].dataset.unit || '-';
+}
+function updateRowPricing(i) {
+  const selectEl = document.querySelector(`select[name="product_id_${i}"]`);
+  const qtyEl = document.querySelector(`input[name="quantity_${i}"]`);
+  const priceInput = document.getElementById(`price-${i}`);
+  const priceDisplay = document.getElementById(`price-display-${i}`);
+  const totalEl = document.getElementById(`line-total-${i}`);
+  if (!selectEl || !qtyEl || !priceInput || !priceDisplay || !totalEl) return;
+
+  const selected = selectEl.options[selectEl.selectedIndex];
+  const price = parseFloat(selected?.dataset.price || 0) || 0;
+  const qty = parseFloat(qtyEl.value || 0) || 0;
+
+  priceInput.value = price;
+  if (price > 0) {
+    priceDisplay.textContent = formatCurrency(price);
+    priceDisplay.classList.remove('empty');
+  } else {
+    priceDisplay.textContent = 'Chọn sản phẩm';
+    priceDisplay.classList.add('empty');
+  }
+
+  totalEl.textContent = qty > 0 && price > 0 ? formatCurrency(qty * price) : '-';
+}
+function buildItemRow(i) {
+  return `<tr id="row-${i}">
+    <td><select name="product_id_${i}" onchange="updateUnit(this,'unit-${i}'); updateRowPricing(${i});">${buildProductOpts()}</select></td>
+    <td><input type="number" name="quantity_${i}" min="0.01" step="0.01" oninput="updateRowPricing(${i})"></td>
+    <td><span id="unit-${i}" style="font-size:13px;color:var(--muted2);">-</span></td>
+    <td>
+      <div class="price-display empty" id="price-display-${i}">Chọn sản phẩm</div>
+      <input type="hidden" name="unit_price_${i}" id="price-${i}" value="0">
+    </td>
+    <td><span class="line-total" id="line-total-${i}">-</span></td>
+    <td><button type="button" class="action-btn" onclick="document.getElementById('row-${i}').remove()">×</button></td>
+  </tr>`;
+}
+function addItemRow() { document.getElementById('items-body').insertAdjacentHTML('beforeend', buildItemRow(itemCount)); itemCount++; }
+setTimeout(() => { document.querySelectorAll('.toast').forEach(t => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }); }, 4000);
+</script>
+{% endblock %}

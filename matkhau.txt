@@ -1,0 +1,30 @@
+from apps.authentication.models import User
+
+# Sửa tài khoản admin hiện tại
+u = User.objects.get(username='admin')
+u.role = 'ADMIN'
+u.is_superuser = True
+u.is_staff = True
+u.save()
+print(f"✅ role = {u.role}")
+
+# Đặt luôn mật khẩu cho các tài khoản test
+accounts = [
+    ('admin02',  'ADMIN',    'Admin@123'),
+    ('sale01',   'SALE',     'Sale@123'),
+    ('sale02',   'SALE',     'Sale@123'),
+    ('kho01',    'KHO',      'Kho@123'),
+    ('kho02',    'KHO',      'Kho@123'),
+    ('ketoan01', 'KE_TOAN',  'KeToan@123'),
+    ('ketoan02', 'KE_TOAN',  'KeToan@123'),
+]
+
+for username, role, password in accounts:
+    try:
+        u = User.objects.get(username=username)
+        u.role = role
+        u.set_password(password)
+        u.save()
+        print(f"✅ {username} → role={role}")
+    except User.DoesNotExist:
+        print(f"❌ Không tìm thấy: {username}")

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Chênh lệch kho — TeLiet System{% endblock %}
+{% block breadcrumb %}Báo cáo chênh lệch{% endblock %}
+{% block nav_inventory_discrepancy %}active{% endblock %}
+
+{% block extra_css %}
+.filter-wrap{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.field{min-width:220px;}
+.field-label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;font-weight:600;}
+.field input,.field select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-size:13px;outline:none;}
+.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,164,39,.08);}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:18px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.stat-value{font-size:24px;font-weight:800;margin-top:8px;color:var(--accent);}
+.status-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;}
+.status-chip.SHORTAGE{background:rgba(239,68,68,.12);color:var(--danger);}
+.status-chip.SURPLUS{background:rgba(34,197,94,.12);color:var(--success);}
+.status-chip.MATCH{background:rgba(59,130,246,.12);color:var(--info);}
+.status-chip.NO_AUDIT{background:rgba(156,163,175,.15);color:var(--muted2);}
+.message-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.message-item{padding:10px 12px;border-radius:8px;font-size:13px;border:1px solid var(--border);background:var(--surface2);}
+.message-item.error,.message-item.danger{border-color:rgba(239,68,68,.35);color:#ffb4b4;}
+.message-item.success{border-color:rgba(34,197,94,.35);color:#9de7b4;}
+.message-item.warning{border-color:rgba(245,158,11,.35);color:#ffd37e;}
+.number-negative{color:var(--danger);font-weight:700;}
+.number-positive{color:var(--success);font-weight:700;}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Báo cáo chênh lệch kho</h1>
+        <p class="page-sub">So sánh tồn hệ thống với số thực tế gần nhất từ kiểm kê</p>
+    </div>
+    {% if can_export %}
+    <div style="display:flex;gap:8px;">
+        <a class="btn btn-ghost" href="{% url 'inventory:discrepancy_export' %}?format=excel&product_id={{ product_id }}&category_id={{ category_id }}">Xuất Excel</a>
+        <a class="btn btn-ghost" href="{% url 'inventory:discrepancy_export' %}?format=pdf&product_id={{ product_id }}&category_id={{ category_id }}">Xuất PDF</a>
+    </div>
+    {% endif %}
+</div>
+
+{% if messages %}
+<div class="message-list">
+    {% for message in messages %}
+    <div class="message-item {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card" style="padding:16px 18px;">
+    <form method="get" class="filter-wrap">
+        <div class="field">
+            <label class="field-label">Danh mục</label>
+            <select name="category_id">
+                <option value="">Tất cả danh mục</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if category_id == category.id|stringformat:'s' %}selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label class="field-label">Sản phẩm</label>
+            <select name="product_id">
+                <option value="">Tất cả sản phẩm</option>
+                {% for product in products %}
+                <option value="{{ product.id }}" {% if product_id == product.id|stringformat:'s' %}selected{% endif %}>{{ product.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="btn btn-primary" type="submit">Xem báo cáo</button>
+        <a class="btn btn-ghost" href="{% url 'inventory:discrepancy_report' %}">Làm mới</a>
+    </form>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Sản phẩm thiếu</div><div class="stat-value">{{ summary.shortage_count }}</div></div>
+    <div class="stat-card"><div class="stat-label">Sản phẩm thừa</div><div class="stat-value">{{ summary.surplus_count }}</div></div>
+    <div class="stat-card"><div class="stat-label">Khớp số liệu</div><div class="stat-value">{{ summary.ok_count }}</div></div>
+    <div class="stat-card"><div class="stat-label">Thời điểm tạo</div><div class="stat-value" style="font-size:16px;line-height:1.4;">{{ generated_at|date:"d/m/Y H:i" }}</div></div>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Sản phẩm</th>
+                <th>Tồn hệ thống</th>
+                <th>Đang giữ</th>
+                <th>Khả dụng</th>
+                <th>Thực tế gần nhất</th>
+                <th>Chênh lệch</th>
+                <th>% chênh lệch</th>
+                <th>Trạng thái</th>
+                <th>Ngày kiểm kê gần nhất</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in items %}
+            <tr>
+                <td class="bold">{{ row.product_name }}</td>
+                <td>{{ row.system_quantity|floatformat:"-2" }}</td>
+                <td>{{ row.reserved_quantity|floatformat:"-2" }}</td>
+                <td>{{ row.available_quantity|floatformat:"-2" }}</td>
+                <td>{% if row.last_actual_qty != None %}{{ row.last_actual_qty|floatformat:"-2" }}{% else %}—{% endif %}</td>
+                <td>
+                    {% if row.discrepancy == None %}
+                        —
+                    {% elif row.discrepancy < 0 %}
+                        <span class="number-negative">{{ row.discrepancy|floatformat:"-2" }}</span>
+                    {% elif row.discrepancy > 0 %}
+                        <span class="number-positive">+{{ row.discrepancy|floatformat:"-2" }}</span>
+                    {% else %}
+                        0
+                    {% endif %}
+                </td>
+                <td>
+                    {% if row.discrepancy_pct == None %}
+                        —
+                    {% else %}
+                        {{ row.discrepancy_pct }}%
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="status-chip {{ row.status }}">
+                        {% if row.status == 'SHORTAGE' %}Thiếu
+                        {% elif row.status == 'SURPLUS' %}Thừa
+                        {% elif row.status == 'MATCH' %}Khớp
+                        {% else %}Chưa kiểm kê{% endif %}
+                    </span>
+                </td>
+                <td>{% if row.last_audit_date %}{{ row.last_audit_date|date:"d/m/Y" }}{% else %}—{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" style="text-align:center;padding:34px;color:var(--muted);">Không có dữ liệu chênh lệch cho bộ lọc hiện tại.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

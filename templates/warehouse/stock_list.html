@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Tồn kho — TeLiet System{% endblock %}
+{% block breadcrumb %}Tồn kho{% endblock %}
+{% block nav_stock %}active{% endblock %}
+
+{% block extra_css %}
+.stock-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:24px;}
+.stock-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;transition:border-color .2s;}
+.stock-card:hover{border-color:var(--accent);}
+.stock-card.out{border-color:rgba(239,68,68,.3);}
+.stock-card.low{border-color:rgba(245,158,11,.3);}
+.stock-qty{font-family:Google Sans Flex,sans-serif;font-size:28px;font-weight:800;line-height:1;margin:8px 0 4px;}
+.stock-qty.ok{color:var(--success);}
+.stock-qty.low{color:var(--warning);}
+.stock-qty.out{color:var(--danger);}
+.stock-product{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.stock-cat{font-size:11px;color:var(--muted);}
+.stock-status{font-size:11px;font-weight:600;margin-top:10px;}
+/* Search */
+.search-form{display:flex;align-items:center;gap:8px;}
+.search-form input{padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);outline:none;transition:border-color .15s;width:280px;}
+.search-form input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,164,39,.08);}
+.search-form input::placeholder{color:var(--muted);}
+.search-form button{padding:8px 14px;background:var(--accent);color:#0e0f11;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:5px;}
+.search-form button:hover{filter:brightness(1.1);}
+/* Pagination - giống product_list */
+.pagination-wrap{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:1px solid var(--border);}
+.pagination{display:flex;gap:4px;}
+.pg-btn{min-width:30px;height:30px;padding:0 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--muted2);text-decoration:none;transition:all .15s;}
+.pg-btn:hover{background:var(--surface3);color:var(--text);}
+.pg-btn.active{background:var(--accent);border-color:var(--accent);color:#0e0f11;font-weight:700;}
+.pg-btn.disabled{opacity:.4;cursor:not-allowed;pointer-events:none;}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Tồn kho hiện tại</h1>
+    <p class="page-sub">Cập nhật tự động khi nhập/xuất kho được duyệt</p>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <a href="{% url 'reports:stock_report' %}" class="btn btn-ghost">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 2 4-5"/></svg>
+      Báo cáo theo thời gian
+    </a>
+    <form method="get" class="search-form">
+      <input type="text" name="search" placeholder="Tìm sản phẩm, danh mục..." value="{{ search_query }}">
+      <button type="submit">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Tìm
+      </button>
+      {% if search_query %}
+      <a href="?" style="padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted2);text-decoration:none;font-size:12px;">✕ Xóa</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Cards grid -->
+<div class="stock-grid">
+  {% for stock in stocks %}
+  {% with qty=stock.quantity %}
+  <div class="stock-card {% if qty == 0 %}out{% elif qty <= 10 %}low{% endif %}">
+    <div class="stock-cat">{{ stock.product.category.name|default:"Chưa phân loại" }}</div>
+    <div class="stock-product">{{ stock.product.name }}</div>
+    <div class="stock-qty {% if qty == 0 %}out{% elif qty <= 10 %}low{% else %}ok{% endif %}">
+      {{ qty|floatformat:"-2" }}
+    </div>
+    <div style="font-size:12px;color:var(--muted2);">{{ stock.product.base_unit }}</div>
+    <div class="stock-status">
+      {% if qty == 0 %}<span style="color:var(--danger);">● Hết hàng</span>
+      {% elif qty <= 10 %}<span style="color:var(--warning);">● Sắp hết</span>
+      {% else %}<span style="color:var(--success);">● Còn hàng</span>{% endif %}
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-top:6px;">Cập nhật: {{ stock.last_updated|date:"d/m H:i" }}</div>
+  </div>
+  {% endwith %}
+  {% empty %}
+  <div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted);">
+    {% if search_query %}
+      Không tìm thấy kết quả cho "<strong style="color:var(--text)">{{ search_query }}</strong>"
+    {% else %}
+      Chưa có dữ liệu tồn kho. Hãy tạo phiếu nhập kho và được kế toán duyệt để cập nhật.
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Table view -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Chi tiết tồn kho</span>
+    {% if paginator.count > 0 %}
+    <span style="font-size:12px;color:var(--muted);">{{ paginator.count }} sản phẩm</span>
+    {% endif %}
+  </div>
+  <table>
+    <thead><tr>
+      <th>Sản phẩm</th><th>Danh mục</th><th>Tồn kho</th><th>Đơn vị</th>
+      <th>Trạng thái</th><th>Cập nhật lúc</th>
+    </tr></thead>
+    <tbody>
+      {% for stock in stocks %}
+      <tr>
+        <td class="bold">{{ stock.product.name }}</td>
+        <td>{{ stock.product.category.name|default:"—" }}</td>
+        <td class="bold">{{ stock.quantity|floatformat:"-2" }}</td>
+        <td>{{ stock.product.base_unit }}</td>
+        <td>
+          {% if stock.quantity == 0 %}
+            <span class="badge cancel">Hết hàng</span>
+          {% elif stock.quantity <= 10 %}
+            <span class="badge processing">Sắp hết</span>
+          {% else %}
+            <span class="badge done">Còn hàng</span>
+          {% endif %}
+        </td>
+        <td>{{ stock.last_updated|date:"d/m/Y H:i" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted);">Chưa có dữ liệu.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if paginator.num_pages > 1 %}
+  <div class="pagination-wrap">
+    <span style="font-size:12px;color:var(--muted);">
+      Trang {{ page_obj.number }} / {{ paginator.num_pages }} — {{ paginator.count }} sản phẩm
+    </span>
+    <div class="pagination">
+      {# Nút trước #}
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="pg-btn">‹</a>
+      {% else %}
+      <span class="pg-btn disabled">‹</span>
+      {% endif %}
+
+      {# Trang 1 #}
+      {% if page_obj.number != 1 %}
+      <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}" class="pg-btn">1</a>
+      {% else %}
+      <span class="pg-btn active">1</span>
+      {% endif %}
+
+      {# Dấu ... trái #}
+      {% if page_obj.number|add:"-1" > 2 %}
+      <span style="margin:0 4px;color:var(--muted);display:flex;align-items:flex-end;height:28px;">...</span>
+      {% endif %}
+
+      {# Trang ±1 xung quanh trang hiện tại, bỏ trang 1 và trang cuối #}
+      {% for num in paginator.page_range %}
+        {% if num > 1 and num < paginator.num_pages and num >= page_obj.number|add:"-1" and num <= page_obj.number|add:"1" %}
+          {% if num == page_obj.number %}
+          <span class="pg-btn active">{{ num }}</span>
+          {% else %}
+          <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}" class="pg-btn">{{ num }}</a>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+
+      {# Dấu ... phải #}
+      {% if page_obj.number|add:"1" < paginator.num_pages|add:"-1" %}
+      <span style="margin:0 4px;color:var(--muted);display:flex;align-items:flex-end;height:28px;">...</span>
+      {% endif %}
+
+      {# Trang cuối #}
+      {% if paginator.num_pages > 1 %}
+        {% if page_obj.number != paginator.num_pages %}
+        <a href="?page={{ paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}" class="pg-btn">{{ paginator.num_pages }}</a>
+        {% else %}
+        <span class="pg-btn active">{{ paginator.num_pages }}</span>
+        {% endif %}
+      {% endif %}
+
+      {# Nút sau #}
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="pg-btn">›</a>
+      {% else %}
+      <span class="pg-btn disabled">›</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

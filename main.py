@@ -1,0 +1,1 @@
+print("Xin chào, đây là project Python tạm của tôi!")

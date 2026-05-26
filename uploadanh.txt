@@ -1,0 +1,67 @@
+## CÁC FILE ĐÃ TẠO / CHỈNH SỬA
+ 
+1. requirements.txt
+   - Thêm: Pillow>=10.0
+ 
+2. middlewares/upload_middleware.py  [FILE MỚI]
+   - Kiểm tra MIME type & kích thước file (tối đa 5MB)
+   - Tạo tên file an toàn bằng uuid4 (tránh Path Traversal)
+   - Resize ảnh tối đa 800x800, nén JPEG chất lượng 85% bằng Pillow
+   - Hàm xoa_anh_cu() để dọn file khi update/delete sản phẩm
+ 
+3. core/settings.py
+   - Thêm: MEDIA_URL = '/media/'
+   - Thêm: MEDIA_ROOT = BASE_DIR / 'media'
+ 
+4. core/urls.py
+   - Thêm import: from django.conf.urls.static import static
+   - Thêm cuối file: urlpatterns += static(MEDIA_URL, document_root=MEDIA_ROOT)
+ 
+5. apps/product/forms.py
+   - Thêm trường ImageField tên anh_san_pham (không bắt buộc)
+   - Bỏ trường image_url khỏi form (xử lý qua upload thay vì nhập URL)
+ 
+6. apps/product/views.py
+   - ProductCreateView: nhận request.FILES, gọi xu_ly_va_luu_anh()
+   - ProductUpdateView: xóa ảnh cũ, lưu ảnh mới, giữ ảnh cũ nếu không upload
+   - ProductDeleteView: gọi xoa_anh_cu() khi xóa sản phẩm
+ 
+7. apps/product/templates/product/product_list.html
+   - Form thêm enctype="multipart/form-data"
+   - Khu vực upload với Drag & Drop
+   - Xem trước ảnh bằng URL.createObjectURL() trước khi submit
+   - Hiển thị ảnh hiện tại khi mở modal edit
+   - Progress bar giả lập khi submit
+   - Bảng danh sách hiển thị thumbnail ảnh sản phẩm
+   - Fallback icon khi ảnh lỗi (hàm imgError)
+ 
+8. .gitignore
+   - Thêm: media/
+ 
+ 
+## LỖI ĐÃ GẶP VÀ CÁCH SỬA
+ 
+Lỗi 1: SyntaxError invalid syntax tại core/urls.py
+   Nguyên nhân: dòng if settings.DEBUG nằm bên trong urlpatterns=[...]
+   Sửa: chuyển ra ngoài, sau dấu ] đóng của urlpatterns
+ 
+Lỗi 2: ModuleNotFoundError No module named PIL
+   Nguyên nhân: Pillow chưa có trong requirements.txt
+   Sửa: thêm Pillow>=10.0 vào requirements.txt rồi cài lại dependencies
+ 
+ 
+## CẤU TRÚC THƯ MỤC SAU KHI HOÀN THÀNH
+ 
+media/
+└── uploads/
+    └── san-pham/       ← ảnh upload lưu tại đây (không commit git)
+ 
+middlewares/
+├── __init__.py
+├── xu_ly_loi.py
+└── upload_middleware.py  ← file mới
+ 
+ 
+## LỆNH CHẠY
+
+python manage.py runserver

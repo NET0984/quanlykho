@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Đơn vị & Quy đổi — TeLiet System{% endblock %}
+{% block breadcrumb %}Đơn vị tính{% endblock %}
+{% block nav_units %}active{% endblock %}
+
+{% block extra_css %}
+        .table-container { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .action-btns { display: flex; gap: 8px; }
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .modal-backdrop.open { opacity: 1; pointer-events: all; }
+        .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 400px; padding: 28px; transform: translateY(16px); transition: transform 0.2s; }
+        .modal-backdrop.open .modal { transform: translateY(0); }
+        .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+        .modal-title { font-family: Google Sans Flex, sans-serif; font-size: 18px; font-weight: 700; color: var(--text); }
+        .modal-close { width: 30px; height: 30px; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted2); }
+        .field { margin-bottom: 16px; }
+        .field-label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 7px; }
+        .field input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 11px 14px; font-family: Google Sans Flex, sans-serif; font-size: 13px; color: var(--text); outline: none; transition: border-color 0.15s; }
+        .field input::placeholder { color: #3a3e47; }
+        .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,164,39,0.08); }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+        .confirm-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+        .confirm-icon.warn { background: rgba(239,68,68,0.1); color: var(--danger); }
+        .confirm-title { font-family: Google Sans Flex, sans-serif; font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+        .confirm-desc { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.6; }
+        .toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 200; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); transform: translateX(80px); opacity: 0; transition: all 0.3s; min-width: 260px; }
+        .toast.show { transform: translateX(0); opacity: 1; }
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.danger { border-left: 3px solid var(--danger); }
+        .toast-icon { width: 20px; height: 20px; flex-shrink: 0; }
+        .toast.success .toast-icon { color: var(--success); }
+        .toast.danger .toast-icon { color: var(--danger); }
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Đơn vị & Quy đổi</h1>
+            <p class="page-sub">Thiết lập tỷ lệ quy đổi giữa đơn vị gốc và đơn vị bán lẻ</p>
+        </div>
+        {% if perms.product.add_productunit %}
+        <button class="btn btn-primary" onclick="openModal('create')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Thêm đơn vị mới
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="table-container card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Sản phẩm áp dụng</th>
+                    <th>Đơn vị quy đổi</th>
+                    <th>Công thức tính</th>
+                    <th style="text-align:right">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in units %}
+                <tr>
+                    <td class="bold">{{ u.product.name }}</td>
+                    <td><span class="unit-tag">{{ u.unit_name }}</span></td>
+                    <td>
+                        <div class="conversion-text">
+                            1 {{ u.unit_name }} = <strong>{{ u.conversion_rate|floatformat:"-2" }}</strong> {{ u.product.base_unit }}
+                        </div>
+                    </td>
+                    <td style="text-align:right">
+                        <div class="action-btns" style="justify-content: flex-end;">
+                            {% if perms.product.change_productunit %}
+                            <button class="action-btn" onclick="openModal('edit', '{{ u.id }}', '{{ u.product.id }}', '{{ u.unit_name|escapejs }}', '{{ u.conversion_rate|stringformat:"f" }}')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            {% endif %}
+
+                            {% if perms.product.delete_productunit %}
+                            <button class="action-btn" onclick="deleteUnit('{{ u.id }}', '{{ u.unit_name|escapejs }}', '{{ u.product.name|escapejs }}')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align:center; padding: 40px; color: var(--muted);">Chưa có đơn vị quy đổi nào được thiết lập.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <div class="modal-backdrop" id="modal-confirm">
+        <form class="modal" id="delete-form" method="POST" style="max-width:400px;text-align:center;">
+            {% csrf_token %}
+            <div class="confirm-icon warn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></div>
+            <div class="confirm-title">Xác nhận xóa đơn vị</div>
+            <p class="confirm-desc" id="confirm-desc"></p>
+            <div class="modal-footer" style="justify-content:center;">
+                <button type="button" class="btn btn-ghost" onclick="closeConfirm()">Hủy</button>
+                <button type="submit" class="btn btn-danger">Xóa đơn vị</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="toast-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="toast show {% if message.tags == 'error' %}danger{% else %}success{% endif %}">
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="modal-backdrop" id="modal-form">
+        <form class="modal" id="unit-form" method="POST" action="{% url 'product:unit_add' %}">
+            {% csrf_token %}
+            <div class="modal-header">
+                <span class="modal-title" id="modal-title">Thêm đơn vị mới</span>
+                <button type="button" class="modal-close" onclick="closeModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            
+            <div class="field">
+                <label class="field-label">Sản phẩm áp dụng *</label>
+                <select name="product_id" id="f-product" required>
+                    <option value="">-- Chọn sản phẩm --</option>
+                    {% for p in products %}
+                        <option value="{{ p.id }}">{{ p.name }} (Gốc: {{ p.base_unit }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label class="field-label">Tên đơn vị quy đổi *</label>
+                <input type="text" name="unit_name" id="f-name" required placeholder="Ví dụ: Tấn, Thiên, Lốc">
+            </div>
+            
+            <div class="field">
+                <label class="field-label">Tỷ lệ quy đổi *</label>
+                <input type="number" name="conversion_rate" id="f-ratio" value="1" step="0.0001" required>
+                <p style="font-size:11px;color:var(--muted);margin-top:5px;">Số lượng đơn vị gốc tạo thành 1 đơn vị này (VD: 1 Tấn = 1000 Kg -> Nhập 1000)</p>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal()">Hủy</button>
+                <button type="submit" class="btn btn-primary">Lưu cấu hình</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    function openModal(type, id, productId, unitName, ratio) {
+        const form = document.getElementById('unit-form');
+        const title = document.getElementById('modal-title');
+        const modalForm = document.getElementById('modal-form');
+        
+        if (type === 'create') {
+            title.textContent = 'Thêm đơn vị mới';
+            form.reset();
+            // Thiết lập URL cho trường hợp thêm mới
+            form.action = "{% url 'product:unit_add' %}"; 
+        } else {
+            title.textContent = 'Chỉnh sửa đơn vị';
+            // Điền dữ liệu vào các ô input/select
+            document.getElementById('f-product').value = productId;
+            document.getElementById('f-name').value = unitName;
+            document.getElementById('f-ratio').value = ratio;
+            
+            // Thiết lập URL cho trường hợp cập nhật
+            let updateUrl = "{% url 'product:unit_update' pk='00000000-0000-0000-0000-000000000000' %}";
+            form.action = updateUrl.replace('00000000-0000-0000-0000-000000000000', id);
+        }
+        
+        // Hiển thị Modal
+        modalForm.classList.add('open');
+    }
+
+    function closeModal() { 
+        document.getElementById('modal-form').classList.remove('open'); 
+    }
+
+    function deleteUnit(id, unitName, productName) {
+        document.getElementById('confirm-desc').textContent = `Đơn vị "${unitName}" của sản phẩm "${productName}" sẽ bị xóa vĩnh viễn.`;
+        
+        let deleteUrl = "{% url 'product:unit_delete' pk='00000000-0000-0000-0000-000000000000' %}";
+        document.getElementById('delete-form').action = deleteUrl.replace('00000000-0000-0000-0000-000000000000', id);
+        
+        document.getElementById('modal-confirm').classList.add('open');
+    }
+
+    function closeConfirm() { 
+        document.getElementById('modal-confirm').classList.remove('open'); 
+    }
+
+    // Tự động ẩn Toast (thông báo)
+    setTimeout(() => {
+        document.querySelectorAll('.toast').forEach(t => {
+            t.classList.remove('show');
+            setTimeout(() => t.remove(), 300);
+        });
+    }, 3500);
+</script>
+{% endblock %}

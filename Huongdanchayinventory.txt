@@ -1,0 +1,273 @@
+📖 HƯỚNG DẪN CHẠY TESTS - HỆ THỐNG QUẢN LÝ KHO (INVENTORY & ORDER)
+=====================================================================
+
+Tài liệu này hướng dẫn cách chạy unit tests chi tiết cho hệ thống quản lý kho 
+với 29 test cases đã triển khai cho Warehouse & Order modules.
+
+---
+
+## 📍 CHUẨN BỊ BAN ĐẦU
+
+### 1️⃣ Bước 1: Bật MySQL Service
+
+**Cách 1: Dùng XAMPP (Windows)**
+- Mở XAMPP Control Panel
+- Nhấn "Start" cho MySQL
+- Đợi cho đến khi hiển thị "Running"
+
+**Cách 2: Windows Services**
+```powershell
+# Bật MySQL service trực tiếp
+net start MySQL80
+# hoặc MariaDB
+net start MariaDB
+```
+
+### 2️⃣ Bước 2: Mở Terminal tại đúng thư mục
+
+```powershell
+# Mở PowerShell và cd vào project
+cd D:\QLDH\TeLiet_Quanlykho
+```
+
+### 3️⃣ Bước 3: Đảm bảo dependencies đã cài
+
+```powershell
+# Cài pytest & pytest-django
+pip install pytest pytest-django
+
+# Hoặc cài từ requirements.txt
+pip install -r requirements.txt
+pip install pytest pytest-django
+```
+
+---
+
+## 🚀 CHẠY TESTS
+
+### CÁC LỆNH CHÍNH
+
+#### 📦 Test WAREHOUSE (Nhập kho, Tồn kho)
+```powershell
+python manage.py test apps.warehouse.tests --verbosity=2
+```
+✅ Chạy 15 tests liên quan đến:
+- ImportReceipt (tạo, duyệt, từ chối, sửa)
+- ProductStock (cộng dồn, kiểm tra)
+
+#### 🛒 Test ORDER (Đơn hàng & Xuất kho)
+```powershell
+python manage.py test apps.order.tests --verbosity=2
+```
+✅ Chạy 14 tests liên quan đến:
+- SalesOrder (tạo, validation, status transitions)
+- ExportReceipt (auto-create, approve, reject)
+
+#### 🔗 Test TẤT CẢ (Warehouse + Order)
+```powershell
+python manage.py test apps.warehouse.tests apps.order.tests --verbosity=2
+```
+✅ Chạy 29 tests tổng cộng
+
+---
+
+## ⚡ TỐI ƯU HÓA - CHẠY NHANH HƠN
+
+### Keepdb Flag (Giữ lại Test Database)
+Test lần đầu: ~40-75 giây (tạo DB)
+Test lần 2+: ~5-10 giây (dùng lại DB)
+
+```powershell
+# Lần đầu tiên
+python manage.py test apps.warehouse.tests --verbosity=2
+
+# Lần thứ 2+ (QUICKER!)
+python manage.py test apps.warehouse.tests --keepdb --verbosity=2
+python manage.py test apps.order.tests --keepdb --verbosity=2
+```
+
+### Parallel Execution (Chạy song song với tất cả apps)
+```powershell
+python manage.py test apps.warehouse.tests apps.order.tests --keepdb
+```
+
+---
+
+## 📊 KIỂM TRA KẾT QUẢ
+
+### Output thành công sẽ giống như:
+
+```
+Found 15 test(s).
+Creating test database for alias 'default' ('test_quanlykhovatlieu')...
+Operations to perform:
+  Synchronize unmigrated apps: core, messages, staticfiles
+  Apply all migrations: ...
+
+System check identified no issues (0 silenced).
+
+test_import_receipt_approve_success ... ok
+test_import_receipt_create_success ... ok
+test_stock_increase_after_import_approve ... ok
+... (tất cả tests)
+
+----------------------------------------------------------------------
+Ran 15 tests in 41.518s
+
+OK ✅
+Destroying test database for alias 'default' ('test_quanlykhovatlieu')...
+```
+
+### Nếu có lỗi:
+```
+FAILED (failures=X, errors=Y)
+```
+
+Lúc này:
+1. Kiểm tra MySQL đã bật chưa
+2. Xem error message chi tiết
+3. Fix code theo error hints
+
+---
+
+## 💾 DÙNG BATCH FILE (Windows)
+
+Đã có 2 batch file sẵn để chạy tests nhanh:
+
+```powershell
+# Chạy tất cả tests
+.\run_tests.bat all
+
+# Chạy TEST với verbose mode
+.\run_tests.bat verbose
+
+# Chạy warehouse tests
+.\run_tests.bat warehouse
+
+# Lưu database để chạy nhanh hơn lần sau
+.\run_tests.bat keep
+```
+
+---
+
+## 🔍 XỬ LÝ LỖI THƯỜNG GẶP
+
+### ❌ Lỗi 1: "Can't connect to server on 'localhost' (10061)"
+**Nguyên nhân:** MySQL chưa bật
+**Giải pháp:** 
+```powershell
+# Bật XAMPP hoặc chạy
+net start MySQL80
+```
+
+### ❌ Lỗi 2: "ModuleNotFoundError: No module named 'pytest'"
+**Nguyên nhân:** pytest chưa cài
+**Giải pháp:**
+```powershell
+pip install pytest pytest-django
+```
+
+### ❌ Lỗi 3: "Type 'yes' if you would like to try deleting the test database..."
+**Nguyên nhân:** Test DB cũ vẫn tồn tại
+**Giải pháp:** Gõ "yes" và Enter (safe - chỉ xóa DB ảo)
+
+### ❌ Lỗi 4: AssertionError hoặc FAILED tests
+**Nguyên nhân:** Code logic bị bug
+**Giải pháp:**
+1. Đọc error message kỹ
+2. Kiểm tra models/services/repositories
+3. Fix code rồi chạy lại
+
+---
+
+## 📈 WORKFLOW CHẠY TESTS CHUẨN
+
+### Workflow 1: Development (Lần đầu)
+```powershell
+# 1. Bật MySQL
+net start MySQL80
+
+# 2. Chạy tests lần đầu
+cd D:\QLDH\TeLiet_Quanlykho
+python manage.py test apps.warehouse.tests --verbosity=2
+
+# 3. Nếu FAIL, fix code rồi chạy lại
+# 4. Nếu PASS, chuyển sang tests khác
+python manage.py test apps.order.tests --verbosity=2
+```
+
+### Workflow 2: Rapid Testing (đã tạo DB)
+```powershell
+# Chạy từ lần 2+ trở đi (NHANH HƠN)
+python manage.py test apps.warehouse.tests --keepdb
+python manage.py test apps.order.tests --keepdb
+
+# Hoặc tất cả cùng lúc
+python manage.py test apps.warehouse.tests apps.order.tests --keepdb
+```
+
+### Workflow 3: CI/CD (Đảm bảo sạch sẽ)
+```powershell
+# Chạy từ đầu, không dùng keepdb
+python manage.py test apps.warehouse.tests apps.order.tests --verbosity=2
+```
+
+---
+
+## 🧹 DỌN DẶP AFTER TESTING
+
+### Xóa Test Database (nếu cần)
+```powershell
+# Django sẽ hỏi nếu DB test cũ tồn tại
+# Gõ "yes" để xóa
+python manage.py test apps.warehouse.tests
+```
+
+### Thoát Virtual Environment (nếu dùng)
+```powershell
+deactivate
+```
+
+---
+
+## 📝 TÓMLẠI CÁC LỆNH THƯỜNG DÙNG
+
+| Mục đích | Lệnh |
+|----------|-----|
+| Test Warehouse | `python manage.py test apps.warehouse.tests --verbosity=2` |
+| Test Order | `python manage.py test apps.order.tests --verbosity=2` |
+| Test Tất Cả | `python manage.py test apps.warehouse.tests apps.order.tests --verbosity=2` |
+| Test Nhanh (lần 2+) | `python manage.py test apps.warehouse.tests --keepdb` |
+| Test Verbose | `python manage.py test --verbosity=2` |
+| Test Chi Tiết từng app | `python manage.py test apps.authentication.test_services` |
+
+---
+
+## ✅ CHECKLIST TRƯỚC KHI CHẠY
+
+```
+☐ MySQL đã bật?
+☐ Đang ở thư mục D:\QLDH\TeLiet_Quanlykho?
+☐ Pytest đã cài? (pip install pytest pytest-django)
+☐ Không có syntax error trong code?
+☐ Dependencies trong requirements.txt đã cài?
+```
+
+Nếu tất cả ✅, bạn sẵn sàng chạy tests!
+
+---
+
+## 🎯 KỲ VỌNG KẾT QUẢ
+
+```
+✅ 15 Warehouse Tests PASS
+✅ 14 Order Tests PASS
+✅ 29 Total Tests PASS
+
+Tất cả các chức năng trong sprint2.txt đã được test cover!
+```
+
+---
+
+*Tài liệu này dành cho team test & dev - TeLiet Quanlykho Project*
+*Cập nhật lần cuối: April 8, 2026*

@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Kiểm kê kho — TeLiet System{% endblock %}
+{% block breadcrumb %}Kiểm kê kho{% endblock %}
+{% block nav_inventory_audits %}active{% endblock %}
+
+{% block extra_css %}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;}
+.status-badge.DRAFT{background:rgba(59,130,246,.12);color:var(--info);}
+.status-badge.SUBMITTED{background:rgba(245,158,11,.12);color:var(--warning);}
+.status-badge.APPROVED{background:rgba(34,197,94,.12);color:var(--success);}
+.status-badge.CANCELLED{background:rgba(239,68,68,.12);color:var(--danger);}
+.filter-wrap{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.field{min-width:160px;}
+.field-label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;font-weight:600;}
+.field input,.field select,.field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-size:13px;outline:none;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,164,39,.08);}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:18px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.stat-value{font-size:26px;font-weight:800;margin-top:6px;color:var(--accent);}
+.message-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.message-item{padding:10px 12px;border-radius:8px;font-size:13px;border:1px solid var(--border);background:var(--surface2);}
+.message-item.error,.message-item.danger{border-color:rgba(239,68,68,.35);color:#ffb4b4;}
+.message-item.success{border-color:rgba(34,197,94,.35);color:#9de7b4;}
+.message-item.warning{border-color:rgba(245,158,11,.35);color:#ffd37e;}
+.pagination-wrap{padding:14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.pagination{display:flex;gap:4px;}
+.pg-btn{min-width:30px;height:30px;padding:0 8px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted2);text-decoration:none;font-size:12px;}
+.pg-btn.active{background:var(--accent);border-color:var(--accent);color:#0e0f11;font-weight:700;}
+.pg-btn.disabled{opacity:.45;pointer-events:none;}
+.multi-select{min-height:180px;}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Kiểm kê kho</h1>
+        <p class="page-sub">Tạo phiên kiểm kê, cập nhật số thực tế và theo dõi trạng thái duyệt</p>
+    </div>
+    {% if user_role == 'KHO' or user_role == 'ADMIN' %}
+    <a href="{% url 'inventory:audit_create' %}" class="btn btn-primary">
+        + Tạo phiên kiểm kê
+    </a>
+    {% endif %}
+</div>
+
+{% if messages %}
+<div class="message-list">
+    {% for message in messages %}
+    <div class="message-item {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Tổng phiên</div><div class="stat-value">{{ stats.total }}</div></div>
+    <div class="stat-card"><div class="stat-label">Đang kiểm</div><div class="stat-value">{{ stats.draft }}</div></div>
+    <div class="stat-card"><div class="stat-label">Chờ duyệt</div><div class="stat-value">{{ stats.submitted }}</div></div>
+    <div class="stat-card"><div class="stat-label">Đã duyệt</div><div class="stat-value">{{ stats.approved }}</div></div>
+</div>
+
+<div class="card" style="padding:16px 18px;">
+    <form method="get" class="filter-wrap">
+        <div class="field">
+            <label class="field-label">Trạng thái</label>
+            <select name="status">
+                <option value="">Tất cả</option>
+                {% for value, label in statuses %}
+                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field">
+            <label class="field-label">Từ ngày</label>
+            <input type="date" name="date_from" value="{{ date_from }}">
+        </div>
+        <div class="field">
+            <label class="field-label">Đến ngày</label>
+            <input type="date" name="date_to" value="{{ date_to }}">
+        </div>
+        <div class="field" style="min-width:280px;">
+            <label class="field-label">Tìm mã kiểm kê</label>
+            <input type="text" name="search" value="{{ search_query }}" placeholder="VD: KK-20260413-001">
+        </div>
+        <button class="btn btn-primary" type="submit">Xem danh sách</button>
+        <a class="btn btn-ghost" href="{% url 'inventory:audit_list' %}">Làm mới</a>
+    </form>
+</div>
+
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Mã kiểm kê</th>
+                <th>Ngày kiểm kê</th>
+                <th>Số dòng</th>
+                <th>Người tạo</th>
+                <th>Trạng thái</th>
+                <th style="text-align:right">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for audit in audits %}
+            <tr>
+                <td class="bold">{{ audit.audit_code }}</td>
+                <td>{{ audit.audit_date|date:"d/m/Y" }}</td>
+                <td>{{ audit.items.count }}</td>
+                <td>{{ audit.created_by.full_name|default:audit.created_by.username }}</td>
+                <td><span class="status-badge {{ audit.status }}">{{ audit.get_status_display }}</span></td>
+                <td style="text-align:right;">
+                    <a class="btn btn-ghost" style="padding:6px 10px;font-size:12px;" href="{% url 'inventory:audit_detail' audit.id %}">Chi tiết</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align:center;padding:34px;color:var(--muted);">Không có phiên kiểm kê nào theo bộ lọc hiện tại.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if paginator.num_pages > 1 %}
+    <div class="pagination-wrap">
+        <span style="font-size:12px;color:var(--muted);">Trang {{ page_obj.number }}/{{ paginator.num_pages }} — {{ paginator.count }} bản ghi</span>
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+            <a class="pg-btn" href="?page={{ page_obj.previous_page_number }}&status={{ status_filter }}&search={{ search_query }}&date_from={{ date_from }}&date_to={{ date_to }}">‹</a>
+            {% else %}
+            <span class="pg-btn disabled">‹</span>
+            {% endif %}
+
+            {% for num in paginator.page_range %}
+                {% if num == page_obj.number %}
+                <span class="pg-btn active">{{ num }}</span>
+                {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+                <a class="pg-btn" href="?page={{ num }}&status={{ status_filter }}&search={{ search_query }}&date_from={{ date_from }}&date_to={{ date_to }}">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a class="pg-btn" href="?page={{ page_obj.next_page_number }}&status={{ status_filter }}&search={{ search_query }}&date_from={{ date_from }}&date_to={{ date_to }}">›</a>
+            {% else %}
+            <span class="pg-btn disabled">›</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

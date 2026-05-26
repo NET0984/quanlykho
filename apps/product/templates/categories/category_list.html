@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý danh mục — TeLiet System{% endblock %}
+{% block breadcrumb %}Danh mục{% endblock %}
+{% block nav_categories %}active{% endblock %}
+
+{% block extra_css %}
+        .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .cat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: border-color 0.2s; }
+        .cat-card:hover { border-color: var(--accent); }
+        .cat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .cat-icon { width: 40px; height: 40px; background: var(--surface2); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); }
+        .cat-name { font-family: Google Sans Flex, sans-serif; font-size: 16px; font-weight: 700; color: var(--text); }
+        .cat-count { font-size: 12px; color: var(--muted); margin-top: 4px; }
+        .cat-actions { display: flex; gap: 8px; }
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .modal-backdrop.open { opacity: 1; pointer-events: all; }
+        .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 400px; padding: 28px; transform: translateY(16px); transition: transform 0.2s; }
+        .modal-backdrop.open .modal { transform: translateY(0); }
+        .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+        .modal-title { font-family: Google Sans Flex, sans-serif; font-size: 18px; font-weight: 700; color: var(--text); }
+        .modal-close { width: 30px; height: 30px; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted2); }
+        .field { margin-bottom: 16px; }
+        .field-label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 7px; }
+        .field input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 11px 14px; font-family: Google Sans Flex, sans-serif; font-size: 13px; color: var(--text); outline: none; transition: border-color 0.15s; }
+        .field input::placeholder { color: #3a3e47; }
+        .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,164,39,0.08); }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+        .confirm-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+        .confirm-icon.warn { background: rgba(239,68,68,0.1); color: var(--danger); }
+        .confirm-title { font-family: Google Sans Flex, sans-serif; font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+        .confirm-desc { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.6; }
+        .toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 200; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); transform: translateX(80px); opacity: 0; transition: all 0.3s; min-width: 260px; }
+        .toast.show { transform: translateX(0); opacity: 1; }
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.danger { border-left: 3px solid var(--danger); }
+        .toast-icon { width: 20px; height: 20px; flex-shrink: 0; }
+        .toast.success .toast-icon { color: var(--success); }
+        .toast.danger .toast-icon { color: var(--danger); }
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <div><h1 class="page-title">Quản lý danh mục</h1></div>
+
+        {% if perms.product.add_category %}
+        <button class="btn btn-primary" onclick="openModal('create')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Thêm danh mục mới
+        </button>
+        {% endif %}
+    </div>
+    
+    <div class="cat-grid" id="category-list">
+        </div>
+{% endblock %}
+
+{% block extra_js %}
+    <div class="modal-backdrop" id="modal-confirm">
+        <form class="modal" id="delete-form" method="POST" style="max-width:400px;text-align:center;">
+            {% csrf_token %}
+            <div class="confirm-icon warn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></div>
+            <div class="confirm-title" id="confirm-title">Xác nhận xóa danh mục</div>
+            <p class="confirm-desc" id="confirm-desc"></p>
+            <div class="modal-footer" style="justify-content:center;">
+                <button type="button" class="btn btn-ghost" onclick="closeConfirm()">Hủy</button>
+                <button type="submit" class="btn btn-danger">Xóa danh mục</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="toast-container" id="toast-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="toast show {% if message.tags == 'error' %}danger{% else %}success{% endif %}">
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="modal-backdrop" id="modal-form">
+        <form class="modal" id="category-form" method="POST" action="{% url 'product:category_list' %}">
+            {% csrf_token %}
+            <div class="modal-header">
+                <span class="modal-title" id="modal-title">Thêm danh mục mới</span>
+                <button type="button" class="modal-close" onclick="closeModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            <div class="field">
+                <label class="field-label">Tên danh mục *</label>
+                <input type="text" id="f-name" name="name" required placeholder="Ví dụ: Sắt thép">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal()">Hủy</button>
+                <button type="submit" class="btn btn-primary" id="btn-submit">Lưu danh mục</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // "Bơm" dữ liệu thật từ biến categories trong View của Django
+        let categories = [
+            {% for cat in categories %}
+            { 
+                id: '{{ cat.id }}', 
+                name: '{{ cat.name|escapejs }}', 
+                count: {{ cat.total_products|default:0 }} 
+            },
+            {% endfor %}
+        ];
+
+        // Khai báo biến quyền để JS sử dụng
+        const canChange = {% if perms.product.change_category %}true{% else %}false{% endif %};
+        const canDelete = {% if perms.product.delete_category %}true{% else %}false{% endif %};
+
+        function renderCategories() {
+            document.getElementById('category-list').innerHTML = categories.map(c => `
+                <div class="cat-card">
+                    <div class="cat-header">
+                        <div class="cat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+                        <div class="cat-actions">
+                            ${canChange ? `
+                            <button class="action-btn" onclick="openModal('edit', '${c.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                            ` : ''}
+
+                            ${canDelete ? `
+                            <button class="action-btn" onclick="deleteCategory('${c.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M9 6V4h6v2"/></svg></button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="cat-name">${c.name}</div>
+                    <div class="cat-count">${c.count} sản phẩm</div>
+                </div>`).join('');
+            
+            if(categories.length === 0) {
+                document.getElementById('category-list').innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 40px; color: var(--muted);">Chưa có danh mục nào.</div>`;
+            }
+        }
+
+        function openModal(type, id) {
+            const form = document.getElementById('category-form');
+            document.getElementById('modal-title').textContent = type === 'create' ? 'Thêm danh mục mới' : 'Chỉnh sửa danh mục';
+            
+            if (type === 'create') {
+                form.reset();
+                form.action = "{% url 'product:category_list' %}"; // Gọi lại view list kèm POST để tạo mới
+            } else {
+                const c = categories.find(x => x.id === id);
+                document.getElementById('f-name').value = c.name;
+                
+                // Dùng Django sinh URL chuẩn cho Update
+                let updateUrl = "{% url 'product:category_update' pk='00000000-0000-0000-0000-000000000000' %}";
+                form.action = updateUrl.replace('00000000-0000-0000-0000-000000000000', id);
+            }
+            document.getElementById('modal-form').classList.add('open');
+        }
+
+        function deleteCategory(id) {
+            const c = categories.find(x => x.id === id);
+            if (c.count > 0) {
+                alert('Không thể xóa danh mục đang chứa sản phẩm để đảm bảo an toàn dữ liệu.');
+                return;
+            }
+            document.getElementById('confirm-desc').textContent = `Danh mục "${c.name}" sẽ bị xóa vĩnh viễn khỏi hệ thống.`;
+            
+            // Dùng Django sinh URL chuẩn cho Delete
+            let deleteUrl = "{% url 'product:category_delete' pk='00000000-0000-0000-0000-000000000000' %}";
+            document.getElementById('delete-form').action = deleteUrl.replace('00000000-0000-0000-0000-000000000000', id);
+            
+            document.getElementById('modal-confirm').classList.add('open');
+        }
+
+        function closeModal() { document.getElementById('modal-form').classList.remove('open'); }
+
+        function closeConfirm() { document.getElementById('modal-confirm').classList.remove('open'); }
+
+        // Tự động ẩn Toast sau 3.5 giây
+        setTimeout(() => {
+            document.querySelectorAll('.toast').forEach(t => {
+                t.classList.remove('show');
+                setTimeout(() => t.remove(), 300);
+            });
+        }, 3500);
+
+        renderCategories();
+    </script>
+{% endblock %}

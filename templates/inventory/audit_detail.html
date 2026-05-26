@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Chi tiết kiểm kê — TeLiet System{% endblock %}
+{% block breadcrumb %}Chi tiết kiểm kê{% endblock %}
+{% block nav_inventory_audits %}active{% endblock %}
+
+{% block extra_css %}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;}
+.status-badge.DRAFT{background:rgba(59,130,246,.12);color:var(--info);}
+.status-badge.SUBMITTED{background:rgba(245,158,11,.12);color:var(--warning);}
+.status-badge.APPROVED{background:rgba(34,197,94,.12);color:var(--success);}
+.status-badge.CANCELLED{background:rgba(239,68,68,.12);color:var(--danger);}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px;}
+.summary-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.summary-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+.summary-value{font-size:24px;font-weight:800;margin-top:8px;color:var(--accent);}
+.message-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.message-item{padding:10px 12px;border-radius:8px;font-size:13px;border:1px solid var(--border);background:var(--surface2);}
+.message-item.error,.message-item.danger{border-color:rgba(239,68,68,.35);color:#ffb4b4;}
+.message-item.success{border-color:rgba(34,197,94,.35);color:#9de7b4;}
+.message-item.warning{border-color:rgba(245,158,11,.35);color:#ffd37e;}
+.disc.shortage{color:var(--danger);font-weight:700;}
+.disc.surplus{color:var(--success);font-weight:700;}
+.disc.match{color:var(--muted2);font-weight:600;}
+.inline-form{display:flex;gap:8px;align-items:center;}
+.inline-form input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 8px;font-size:12px;min-width:90px;}
+.inline-form .note-input{min-width:200px;}
+.action-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ audit.audit_code }}</h1>
+        <p class="page-sub">Ngày kiểm kê: {{ audit.audit_date|date:"d/m/Y" }} • Người tạo: {{ audit.created_by.full_name|default:audit.created_by.username }}</p>
+    </div>
+    <div>
+        <span class="status-badge {{ audit.status }}">{{ audit.get_status_display }}</span>
+    </div>
+</div>
+
+{% if messages %}
+<div class="message-list">
+    {% for message in messages %}
+    <div class="message-item {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="action-row">
+    <a class="btn btn-ghost" href="{% url 'inventory:audit_list' %}">Quay lại danh sách</a>
+
+    {% if can_submit %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="submit">
+        <button class="btn btn-primary" type="submit">Nộp duyệt kiểm kê</button>
+    </form>
+    {% endif %}
+
+    {% if can_approve %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="approve">
+        <button class="btn btn-primary" type="submit">Duyệt kiểm kê</button>
+    </form>
+    {% endif %}
+
+    {% if can_cancel %}
+    <form method="post" class="inline-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="cancel">
+        <input type="text" name="reason" placeholder="Lý do hủy (tùy chọn)">
+        <button class="btn btn-danger" type="submit">Hủy phiên</button>
+    </form>
+    {% endif %}
+
+    {% if can_export %}
+    <a class="btn btn-ghost" href="{% url 'inventory:audit_export' audit.id %}?format=excel">Xuất Excel</a>
+    <a class="btn btn-ghost" href="{% url 'inventory:audit_export' audit.id %}?format=pdf">Xuất PDF</a>
+    {% endif %}
+</div>
+
+<div class="summary-grid">
+    <div class="summary-card"><div class="summary-label">Tổng sản phẩm</div><div class="summary-value">{{ summary.total_products }}</div></div>
+    <div class="summary-card"><div class="summary-label">Sản phẩm thiếu</div><div class="summary-value">{{ summary.products_with_loss }}</div></div>
+    <div class="summary-card"><div class="summary-label">Sản phẩm thừa</div><div class="summary-value">{{ summary.products_with_surplus }}</div></div>
+    <div class="summary-card"><div class="summary-label">Tổng chênh lệch</div><div class="summary-value">{{ summary.total_discrepancy_qty|floatformat:"-2" }}</div></div>
+</div>
+
+{% if can_edit_items %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin: 18px 0 12px 0;">
+    <h3 style="font-size:15px; font-weight:700; color:var(--text);">Chi tiết sản phẩm</h3>
+    <button form="save-all-form" type="submit" class="btn btn-primary" style="background:var(--success);border-color:var(--success);">Lưu</button>
+</div>
+<form method="post" id="save-all-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_all_items">
+{% endif %}
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Sản phẩm</th>
+                <th>Hệ thống</th>
+                <th>Thực tế</th>
+                <th>Chênh lệch</th>
+                <th>Ghi chú</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td class="bold">{{ item.product.name }}</td>
+                <td>{{ item.system_quantity|floatformat:"-2" }}</td>
+                <td>{{ item.actual_quantity|floatformat:"-2" }}</td>
+                <td>
+                    {% if item.discrepancy < 0 %}
+                    <span class="disc shortage">{{ item.discrepancy|floatformat:"-2" }}</span>
+                    {% elif item.discrepancy > 0 %}
+                    <span class="disc surplus">+{{ item.discrepancy|floatformat:"-2" }}</span>
+                    {% else %}
+                    <span class="disc match">0</span>
+                    {% endif %}
+                </td>
+                <td>{{ item.note|default:"—" }}</td>
+                {% if can_edit_items %}
+                <td style="text-align:right;">
+                    <div class="inline-form" style="justify-content:flex-end;">
+                        <input type="hidden" name="item_id" value="{{ item.id }}">
+                        <input type="number" step="0.01" min="0" name="actual_quantity_{{ item.id }}" value="{{ item.actual_quantity }}" required>
+                        <input class="note-input" type="text" name="note_{{ item.id }}" value="{{ item.note }}" placeholder="Ghi chú">
+                    </div>
+                </td>
+                {% endif %}
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align:center;padding:36px;color:var(--muted);">Không có dữ liệu kiểm kê.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if can_edit_items %}
+</form>
+{% endif %}
+
+{% if audit.note %}
+<div class="card" style="padding:14px 16px;margin-top:14px;">
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Ghi chú phiên</div>
+    <div style="font-size:13px;color:var(--text);">{{ audit.note }}</div>
+</div>
+{% endif %}
+{% endblock %}
