@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: quanlykho
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: >-
+      pip install -r requirements.txt;
+      python manage.py collectstatic --noinput;
+      python manage.py migrate;
+      curl -L "$DATA_FIXTURE_URL" -o data.json;
+      python manage.py loaddata data.json
+    startCommand: gunicorn core.wsgi:application
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: core.settings
+      - key: DEBUG
+        value: "0"
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://quanlykho.onrender.com
+      - key: DATA_FIXTURE_URL
+        value: https://drive.google.com/uc?export=download&id=1wHT9yVuoJU7w2PSJzy6Dafks586xjwjP
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
