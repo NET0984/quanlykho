@@ -4,19 +4,19 @@ services:
     runtime: python
     region: oregon
     plan: free
-    buildCommand: >-
-      pip install -r requirements.txt;
-      python manage.py collectstatic --noinput;
-      python manage.py migrate;
-      curl -L "$DATA_FIXTURE_URL" -o data.json;
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      python manage.py migrate
+      curl -L "$DATA_FIXTURE_URL" -o data.json
       python - <<'PY'
       import pathlib
 
       data = pathlib.Path('data.json').read_bytes()
       try:
-          text = data.decode('utf-8')
+        text = data.decode('utf-8')
       except UnicodeDecodeError:
-          text = data.decode('utf-16')
+        text = data.decode('utf-16')
 
       pathlib.Path('data_utf8.json').write_text(text, encoding='utf-8')
       PY
