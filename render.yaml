@@ -9,17 +9,7 @@ services:
       python manage.py collectstatic --noinput
       python manage.py migrate
       curl -L "$DATA_FIXTURE_URL" -o data.json
-      python - <<'PY'
-      import pathlib
-
-      data = pathlib.Path('data.json').read_bytes()
-      try:
-        text = data.decode('utf-8')
-      except UnicodeDecodeError:
-        text = data.decode('utf-16')
-
-      pathlib.Path('data_utf8.json').write_text(text, encoding='utf-8')
-      PY
+      python -c "import pathlib; data=pathlib.Path('data.json').read_bytes(); text=data.decode('utf-16') if data[:2] in (b'\\xff\\xfe', b'\\xfe\\xff') else data.decode('utf-8'); pathlib.Path('data_utf8.json').write_text(text, encoding='utf-8')"
       python manage.py loaddata data_utf8.json
     startCommand: gunicorn core.wsgi:application
     envVars:
